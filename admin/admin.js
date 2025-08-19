@@ -1,0 +1,790 @@
+// -- SUPABASE SETUP --
+const SUPABASE_URL = "https://mdpmktdfszztukfgqwjq.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kcG1rdGRmc3p6dHVrZmdxd2pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxMDQ0MTksImV4cCI6MjA3MDY4MDQxOX0.NBlC_7cqv7WscIryrJEPpfpktP8YerbsHfKp8UbjqHU";
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// -- END SUPABASE SETUP --
+
+// App State
+let menuItems = [];
+let availableCategories = [];
+
+// DOM Elements
+const logoutBtn = document.getElementById("logoutBtn");
+const manageMenuBtn = document.getElementById("manageMenuBtn");
+const dashboardBtn = document.getElementById("dashboardBtn");
+const adminView = document.getElementById("adminView");
+const menuManagementView = document.getElementById("menuManagementView");
+const adminLoginModal = document.getElementById("adminLoginModal");
+const adminLoginBtn = document.getElementById("adminLoginBtn");
+const addItemBtn = document.getElementById("addItemBtn");
+const cancelEditBtn = document.getElementById("cancelEditBtn");
+
+// Initialize App
+async function init() {
+  await checkUserSession();
+}
+
+async function checkUserSession() {
+  const {
+    data: { session },
+  } = await db.auth.getSession();
+  if (session) {
+    showDashboard();
+    await loadDataFromSupabase();
+    await renderAdminOrders(); // Initial fetch
+  } else {
+    showLogin();
+  }
+}
+
+// Navigation
+dashboardBtn.addEventListener("click", showDashboard);
+manageMenuBtn.addEventListener("click", showMenuManagementView);
+logoutBtn.addEventListener("click", async () => {
+  await db.auth.signOut();
+  showLogin();
+});
+
+function showLogin() {
+  adminLoginModal.classList.remove("hidden");
+  adminView.classList.add("hidden");
+  menuManagementView.classList.add("hidden");
+  dashboardBtn.classList.add("hidden");
+  manageMenuBtn.classList.add("hidden");
+  logoutBtn.classList.add("hidden");
+}
+
+function showDashboard() {
+  adminLoginModal.classList.add("hidden");
+  adminView.classList.remove("hidden");
+  menuManagementView.classList.add("hidden");
+  dashboardBtn.classList.remove("hidden");
+  manageMenuBtn.classList.remove("hidden");
+  logoutBtn.classList.remove("hidden");
+  dashboardBtn.classList.add("btn-primary");
+  dashboardBtn.classList.remove("btn-secondary");
+  manageMenuBtn.classList.add("btn-secondary");
+  manageMenuBtn.classList.remove("btn-primary");
+}
+
+function showMenuManagementView() {
+  adminView.classList.add("hidden");
+  menuManagementView.classList.remove("hidden");
+  manageMenuBtn.classList.add("btn-primary");
+  manageMenuBtn.classList.remove("btn-secondary");
+  dashboardBtn.classList.add("btn-secondary");
+  dashboardBtn.classList.remove("btn-primary");
+  renderMenuItemsList();
+}
+
+// Admin Login
+adminLoginBtn.addEventListener("click", async () => {
+  const email = document.getElementById("adminEmail").value;
+  const password = document.getElementById("adminPassword").value;
+  const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    alert("Error: " + error.message);
+  } else {
+    await init();
+  }
+});
+
+// Admin Functions
+let currentAdminTab = "pending";
+
+document.querySelectorAll(".admin-tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    const tabName = tab.dataset.tab;
+    switchAdminTab(tabName);
+  });
+});
+
+function switchAdminTab(tabName) {
+  currentAdminTab = tabName;
+
+  document
+    .querySelectorAll(".admin-tab")
+    .forEach((tab) => tab.classList.remove("active"));
+  document.querySelector(`[data-tab="${tabName}"]`).classList.add("active");
+
+  document
+    .querySelectorAll(".admin-section")
+    .forEach((section) => section.classList.remove("active"));
+  document.getElementById(`${tabName}Section`).classList.add("active");
+
+  renderAdminOrders();
+}
+
+async function renderAdminOrders(orders) {
+  if (!orders) {
+    const { data, error } = await db
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Error fetching orders:", error);
+      return;
+    }
+    orders = data;
+  }
+
+  const pendingOrders = orders.filter((order) => order.status === "Pending");
+  const acceptedOrders = orders.filter((order) => order.status === "Accepted");
+  const completedOrders = orders.filter(
+    (order) => order.status === "Completed"
+  );
+  const rejectedOrders = orders.filter((order) => order.status === "Rejected");
+
+  document.getElementById("pendingBadge").textContent = pendingOrders.length;
+  document.getElementById("acceptedBadge").textContent = acceptedOrders.length;
+  document.getElementById("completedBadge").textContent =
+    completedOrders.length;
+  document.getElementById("rejectedBadge").textContent = rejectedOrders.length;
+
+  document.getElementById("pendingBadge").style.display =
+    pendingOrders.length > 0 ? "flex" : "none";
+  document.getElementById("acceptedBadge").style.display =
+    acceptedOrders.length > 0 ? "flex" : "none";
+  document.getElementById("completedBadge").style.display =
+    completedOrders.length > 0 ? "flex" : "none";
+  document.getElementById("rejectedBadge").style.display =
+    rejectedOrders.length > 0 ? "flex" : "none";
+
+  renderOrderSection("pending", pendingOrders);
+  renderOrderSection("accepted", acceptedOrders);
+  renderOrderSection("completed", completedOrders);
+  renderOrderSection("rejected", rejectedOrders);
+}
+
+function renderOrderSection(status, ordersList) {
+  const container = document.getElementById(`${status}Orders`);
+
+  if (ordersList.length === 0) {
+    container.innerHTML = `<p class="empty-state">No ${status} orders</p>`;
+    return;
+  }
+
+  container.innerHTML = ordersList
+    .map(
+      (order) => `
+        <div class="order-card">
+            <div class="order-header">
+                <div class="order-info">
+                    <h4>Order #${order.id}</h4>
+                    <p>Customer: ${order.customer_name}</p>
+                    <p style="font-size: 14px;">${new Date(
+                      order.created_at
+                    ).toLocaleString()}</p>
+                </div>
+                <div style="text-align: right;">
+                    <span class="order-status" style="background: ${getStatusColor(
+                      order.status
+                    )};">${order.status}</span>
+                    <p class="order-total">$${order.total.toFixed(2)}</p>
+                </div>
+            </div>
+            <div class="order-items">
+                ${order.items
+                  .map((item) => {
+                    const totalQty = item.dineInQty + item.takeawayQty;
+                    let diningDetails = [];
+                    if (item.dineInQty > 0)
+                      diningDetails.push(`🍽️ ${item.dineInQty}`);
+                    if (item.takeawayQty > 0)
+                      diningDetails.push(`📦 ${item.takeawayQty}`);
+
+                    return `
+                    <div class="order-item">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <span style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span>${item.name}</span>
+                                        <span style="color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 12px; font-size: 12px;">x${totalQty}</span>
+                                    </div>
+                                    <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">
+                                        ${diningDetails.join(" • ")}
+                                    </div>
+                                    ${
+                                      item.note && item.note.trim()
+                                        ? `<div style="font-size: 11px; color: #ea580c; margin-top: 4px; font-weight: 500; background: #fef7ed; padding: 4px 8px; border-radius: 4px; border-left: 3px solid #ea580c;">📝 Special Instructions: ${item.note.trim()}</div>`
+                                        : ""
+                                    }
+                                </div>
+                            </span>
+                            <span style="font-weight: 600;">$${(
+                              item.price * totalQty
+                            ).toFixed(2)}</span>
+                        </div>
+                    </div>
+                    `;
+                  })
+                  .join("")}
+            </div>
+            ${getOrderActions(order)}
+        </div>
+    `
+    )
+    .join("");
+}
+
+function getStatusColor(status) {
+  switch (status) {
+    case "Pending":
+      return "#fef3c7";
+    case "Accepted":
+      return "#dbeafe";
+    case "Completed":
+      return "#d1fae5";
+    case "Rejected":
+      return "#fee2e2";
+    default:
+      return "#f3f4f6";
+  }
+}
+
+function getOrderActions(order) {
+  switch (order.status) {
+    case "Pending":
+      return `
+                <div class="order-actions">
+                    <button onclick="updateOrderStatus(${order.id}, 'Accepted')" class="btn btn-success">Accept Order</button>
+                    <button onclick="updateOrderStatus(${order.id}, 'Rejected')" class="btn btn-danger">Reject Order</button>
+                </div>
+            `;
+    case "Accepted":
+      return `
+                <div class="order-actions">
+                    <button onclick="updateOrderStatus(${order.id}, 'Completed')" class="btn btn-success">Complete Order</button>
+                </div>
+            `;
+    default:
+      return "";
+  }
+}
+
+window.updateOrderStatus = async function (orderId, newStatus) {
+  const { error } = await db
+    .from("orders")
+    .update({ status: newStatus })
+    .eq("id", orderId);
+  if (error) {
+    console.error("Error updating order status:", error);
+    alert("Error updating order status: " + error.message);
+  } else {
+    await renderAdminOrders();
+  }
+};
+
+function showInfoModal(title, message) {
+  document.getElementById("confirmTitle").textContent = title;
+  document.getElementById("confirmMessage").textContent = message;
+  document.getElementById("confirmModal").classList.remove("hidden");
+
+  document.getElementById("confirmCancel").classList.add("hidden");
+  const confirmBtn = document.getElementById("confirmProceed");
+  confirmBtn.textContent = "OK";
+  confirmBtn.classList.remove("btn-danger");
+  confirmBtn.classList.add("btn-primary");
+
+  const newConfirmBtn = confirmBtn.cloneNode(true);
+  confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+  newConfirmBtn.addEventListener("click", () => {
+    document.getElementById("confirmModal").classList.add("hidden");
+    document.getElementById("confirmCancel").classList.remove("hidden");
+    newConfirmBtn.textContent = "Confirm";
+    newConfirmBtn.classList.add("btn-danger");
+    newConfirmBtn.classList.remove("btn-primary");
+  });
+}
+
+window.clearCompleted = async function () {
+  const { data, error } = await db
+    .from("orders")
+    .delete()
+    .eq("status", "Completed");
+  if (error) {
+    console.error("Error clearing completed orders:", error);
+  } else {
+    showInfoModal("Success! ✅", "Completed orders cleared successfully!");
+    await renderAdminOrders();
+  }
+};
+
+window.clearRejected = async function () {
+  const { data, error } = await db
+    .from("orders")
+    .delete()
+    .eq("status", "Rejected");
+  if (error) {
+    console.error("Error clearing rejected orders:", error);
+  } else {
+    showInfoModal("Success! ✅", "Rejected orders cleared successfully!");
+    await renderAdminOrders();
+  }
+};
+
+// Menu Management Functions
+function renderMenuItemsList() {
+  const menuItemsList = document.getElementById("menuItemsList");
+
+  if (menuItems.length === 0) {
+    menuItemsList.innerHTML = '<p class="empty-state">No menu items</p>';
+    return;
+  }
+
+  const categories = {};
+  menuItems.forEach((item) => {
+    if (!categories[item.category]) {
+      categories[item.category] = [];
+    }
+    categories[item.category].push(item);
+  });
+
+  const categoryOrder = availableCategories.map((c) => c.name);
+
+  let html = "";
+
+  categoryOrder.forEach((categoryName) => {
+    if (categories[categoryName]) {
+      html += renderCategorySectionForAdmin(
+        categoryName,
+        categories[categoryName]
+      );
+    }
+  });
+
+  Object.keys(categories).forEach((categoryName) => {
+    if (!categoryOrder.includes(categoryName)) {
+      html += renderCategorySectionForAdmin(
+        categoryName,
+        categories[categoryName]
+      );
+    }
+  });
+
+  menuItemsList.innerHTML = html;
+
+  setTimeout(() => {
+    applyExpandedState();
+  }, 10);
+}
+
+function renderCategorySectionForAdmin(categoryName, items) {
+  const inStockItems = items.filter((item) => item.in_stock);
+  const outOfStockItems = items.filter((item) => !item.in_stock);
+
+  const inStockTakeawayAvailable = inStockItems.filter(
+    (item) => item.takeaway_available
+  );
+  const inStockTakeawayNotAvailable = inStockItems.filter(
+    (item) => !item.takeaway_available
+  );
+
+  return `
+        <div style="margin-bottom: 32px; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+            <div style="background: #f9fafb; padding: 16px; border-bottom: 1px solid #e5e7eb; cursor: pointer;" onclick="toggleMenuSection('category-${categoryName}')">
+                <h3 style="font-size: 20px; font-weight: bold; color: #1f2937; margin: 0; display: flex; justify-content: space-between; align-items: center;">
+                    ${categoryName} (${items.length} items)
+                    <span class="category-arrow" id="arrow-category-${categoryName}" style="transform: rotate(-90deg); transition: transform 0.3s ease;">▼</span>
+                </h3>
+            </div>
+            
+            <div id="content-category-${categoryName}" style="padding: 16px; max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease;">
+                ${
+                  inStockItems.length > 0
+                    ? `
+                    <div style="margin-bottom: 24px;">
+                        <div style="cursor: pointer;" onclick="toggleMenuSection('instock-${categoryName}')">
+                            <h4 style="font-size: 17px; font-weight: 700; color: #065f46; margin-bottom: 16px; padding: 12px 18px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-radius: 12px; display: inline-flex; align-items: center; gap: 12px; box-shadow: 0 3px 6px rgba(6, 95, 70, 0.15); border: 1px solid #6ee7b7; transition: all 0.3s ease;" onmouseover="this.style.transform='translateX(5px)'; this.style.boxShadow='0 5px 10px rgba(6, 95, 70, 0.25)'" onmouseout="this.style.transform='translateX(0px)'; this.style.boxShadow='0 3px 6px rgba(6, 95, 70, 0.15)'">
+                                ✅ In Stock (${inStockItems.length})
+                                <span class="category-arrow" id="arrow-instock-${categoryName}" style="transform: rotate(-90deg); transition: transform 0.3s ease; font-size: 14px; color: #065f46;">▼</span>
+                            </h4>
+                        </div>
+                        
+                        <div id="content-instock-${categoryName}" style="max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease;">
+                            ${
+                              inStockTakeawayAvailable.length > 0
+                                ? `
+                                <div style="margin-bottom: 20px; margin-left: 16px;">
+                                    <div style="cursor: pointer;" onclick="toggleMenuSection('takeaway-available-${categoryName}')">
+                                        <h5 style="font-size: 15px; font-weight: 700; color: #1e40af; margin-bottom: 12px; padding: 10px 16px; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 10px; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.1); border: 1px solid #93c5fd; transition: all 0.3s ease;" onmouseover="this.style.transform='translateX(3px)'; this.style.boxShadow='0 4px 8px rgba(30, 64, 175, 0.2)'" onmouseout="this.style.transform='translateX(0px)'; this.style.boxShadow='0 2px 4px rgba(30, 64, 175, 0.1)'">
+                                            📦 Takeaway Available (${
+                                              inStockTakeawayAvailable.length
+                                            })
+                                            <span class="category-arrow" id="arrow-takeaway-available-${categoryName}" style="transform: rotate(-90deg); transition: transform 0.3s ease; font-size: 12px; color: #1e40af;">▼</span>
+                                        </h5>
+                                    </div>
+                                    <div id="content-takeaway-available-${categoryName}" style="margin-left: 16px; max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease;">
+                                        <div style="display: grid; gap: 12px;">
+                                            ${inStockTakeawayAvailable
+                                              .map((item) =>
+                                                renderMenuItemForAdmin(item)
+                                              )
+                                              .join("")}
+                                        </div>
+                                    </div>
+                                </div>
+                            `
+                                : ""
+                            }
+                            
+                            ${
+                              inStockTakeawayNotAvailable.length > 0
+                                ? `
+                                <div style="margin-bottom: 20px; margin-left: 16px;">
+                                    <div style="cursor: pointer;" onclick="toggleMenuSection('takeaway-not-available-${categoryName}')">
+                                        <h5 style="font-size: 15px; font-weight: 700; color: #92400e; margin-bottom: 12px; padding: 10px 16px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 10px; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(146, 64, 14, 0.1); border: 1px solid #fbbf24; transition: all 0.3s ease;" onmouseover="this.style.transform='translateX(3px)'; this.style.boxShadow='0 4px 8px rgba(146, 64, 14, 0.2)'" onmouseout="this.style.transform='translateX(0px)'; this.style.boxShadow='0 2px 4px rgba(146, 64, 14, 0.1)'">
+                                            🍽️ Dine-in Only (${
+                                              inStockTakeawayNotAvailable.length
+                                            })
+                                            <span class="category-arrow" id="arrow-takeaway-not-available-${categoryName}" style="transform: rotate(-90deg); transition: transform 0.3s ease; font-size: 12px; color: #92400e;">▼</span>
+                                        </h5>
+                                    </div>
+                                    <div id="content-takeaway-not-available-${categoryName}" style="margin-left: 16px; max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease;">
+                                        <div style="display: grid; gap: 12px;">
+                                            ${inStockTakeawayNotAvailable
+                                              .map((item) =>
+                                                renderMenuItemForAdmin(item)
+                                              )
+                                              .join("")}
+                                        </div>
+                                    </div>
+                                </div>
+                            `
+                                : ""
+                            }
+                        </div>
+                    </div>
+                `
+                    : ""
+                }
+                
+                ${
+                  outOfStockItems.length > 0
+                    ? `
+                    <div>
+                        <div style="cursor: pointer;" onclick="toggleMenuSection('outofstock-${categoryName}')">
+                            <h4 style="font-size: 17px; font-weight: 700; color: #991b1b; margin-bottom: 16px; padding: 12px 18px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 12px; display: inline-flex; align-items: center; gap: 12px; box-shadow: 0 3px 6px rgba(153, 27, 27, 0.15); border: 1px solid #f87171; transition: all 0.3s ease;" onmouseover="this.style.transform='translateX(5px)'; this.style.boxShadow='0 5px 10px rgba(153, 27, 27, 0.25)'" onmouseout="this.style.transform='translateX(0px)'; this.style.boxShadow='0 3px 6px rgba(153, 27, 27, 0.15)'">
+                                ❌ Out of Stock (${outOfStockItems.length})
+                                <span class="category-arrow" id="arrow-outofstock-${categoryName}" style="transform: rotate(-90deg); transition: transform 0.3s ease; font-size: 14px; color: #991b1b;">▼</span>
+                            </h4>
+                        </div>
+                        <div id="content-outofstock-${categoryName}" style="max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease;">
+                            <div style="display: grid; gap: 12px; margin-left: 16px;">
+                                ${outOfStockItems
+                                  .map((item) => renderMenuItemForAdmin(item))
+                                  .join("")}
+                            </div>
+                        </div>
+                    </div>
+                `
+                    : ""
+                }
+                
+                ${
+                  items.length === 0
+                    ? '<p style="color: #6b7280; text-align: center; padding: 20px;">No items in this category</p>'
+                    : ""
+                }
+            </div>
+        </div>
+    `;
+}
+
+function renderMenuItemForAdmin(item) {
+  return `
+        <div class="menu-card" style="margin-bottom: 0;">
+            <div class="menu-card-content" style="padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                    <h3 class="menu-name" style="margin-bottom: 4px; font-size: 18px;">${
+                      item.emoji
+                    } ${item.name}</h3>
+                    <span class="menu-price" style="font-size: 18px;">$${
+                      item.price
+                    }</span>
+                </div>
+                <p class="menu-description" style="margin-bottom: 12px; font-size: 14px; line-height: 1.4;">${
+                  item.description
+                }</p>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button onclick="toggleStock(${item.id})" class="btn ${
+    item.in_stock ? "btn-danger" : "btn-success"
+  }" style="font-size: 12px; padding: 6px 12px;">
+                            ${
+                              item.in_stock
+                                ? "Mark Out of Stock"
+                                : "Mark In Stock"
+                            }
+                        </button>
+                        <button onclick="toggleTakeaway(${
+                          item.id
+                        })" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;">
+                            ${
+                              item.takeaway_available
+                                ? "Disable Takeaway"
+                                : "Enable Takeaway"
+                            }
+                        </button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="editMenuItem(${
+                          item.id
+                        })" class="btn" style="font-size: 12px; padding: 6px 12px; background: #3b82f6; color: white;">Edit</button>
+                        <button onclick="deleteMenuItem(${
+                          item.id
+                        })" class="btn" style="font-size: 12px; padding: 6px 12px; background: #dc2626; color: white;">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function addOrUpdateItem() {
+  const name = document.getElementById("newItemName").value.trim();
+  const price = parseFloat(document.getElementById("newItemPrice").value);
+  const category = document.getElementById("newItemCategory").value;
+  const emoji = document.getElementById("newItemEmoji").value.trim() || "🍽️";
+  const description = document
+    .getElementById("newItemDescription")
+    .value.trim();
+  const id = document.getElementById("editItemId").value;
+
+  if (!name || !price || !category || !description) {
+    alert(
+      "Please fill in all required fields (name, price, category, description)"
+    );
+    return;
+  }
+
+  const itemData = { name, price, category, emoji, description };
+  let error;
+
+  if (id) {
+    // Update existing item
+    const { error: updateError } = await db
+      .from("menu_items")
+      .update(itemData)
+      .eq("id", id);
+    error = updateError;
+  } else {
+    // Insert new item
+    const { error: insertError } = await db
+      .from("menu_items")
+      .insert({ ...itemData, in_stock: true, takeaway_available: true });
+    error = insertError;
+  }
+
+  if (error) {
+    alert("Error saving item: " + error.message);
+  } else {
+    alert(`Item ${id ? "updated" : "added"} successfully!`);
+    resetItemForm();
+    await loadDataFromSupabase();
+    renderMenuItemsList();
+  }
+}
+
+async function addNewCategory() {
+  const categoryName = document.getElementById("newCategoryName").value.trim();
+
+  if (!categoryName) {
+    alert("Please enter a category name");
+    return;
+  }
+
+  if (availableCategories.some((c) => c.name === categoryName)) {
+    alert("Category already exists");
+    return;
+  }
+
+  const { error } = await db.from("categories").insert({ name: categoryName });
+
+  if (error) {
+    alert("Error adding category: " + error.message);
+  } else {
+    document.getElementById("newCategoryName").value = "";
+    alert("Category added successfully!");
+    await loadDataFromSupabase();
+    updateCategoryDropdown();
+  }
+}
+
+window.deleteMenuItem = async function (itemId) {
+  if (confirm("Are you sure you want to delete this item?")) {
+    const { error } = await db.from("menu_items").delete().eq("id", itemId);
+    if (error) {
+      alert("Error deleting item: " + error.message);
+    } else {
+      alert("Item deleted successfully!");
+      await loadDataFromSupabase();
+      renderMenuItemsList();
+    }
+  }
+};
+
+window.editMenuItem = function (itemId) {
+  const item = menuItems.find((i) => i.id === itemId);
+  if (item) {
+    document.getElementById("formTitle").textContent = "Edit Item";
+    document.getElementById("editItemId").value = item.id;
+    document.getElementById("newItemName").value = item.name;
+    document.getElementById("newItemPrice").value = item.price;
+    document.getElementById("newItemCategory").value = item.category;
+    document.getElementById("newItemEmoji").value = item.emoji;
+    document.getElementById("newItemDescription").value = item.description;
+
+    addItemBtn.textContent = "Update Item";
+    cancelEditBtn.classList.remove("hidden");
+  }
+};
+
+function resetItemForm() {
+  document.getElementById("formTitle").textContent = "Add New Item";
+  document.getElementById("editItemId").value = "";
+  document.getElementById("newItemName").value = "";
+  document.getElementById("newItemPrice").value = "";
+  document.getElementById("newItemCategory").value = "";
+  document.getElementById("newItemEmoji").value = "";
+  document.getElementById("newItemDescription").value = "";
+
+  addItemBtn.textContent = "Add Item";
+  cancelEditBtn.classList.add("hidden");
+}
+
+window.toggleStock = async function (itemId) {
+  const item = menuItems.find((i) => i.id === itemId);
+  if (item) {
+    const { error } = await db
+      .from("menu_items")
+      .update({ in_stock: !item.in_stock })
+      .eq("id", itemId);
+    if (error) {
+      alert("Error updating stock status: " + error.message);
+    } else {
+      await loadDataFromSupabase();
+      renderMenuItemsList();
+    }
+  }
+};
+
+window.toggleTakeaway = async function (itemId) {
+  const item = menuItems.find((i) => i.id === itemId);
+  if (item) {
+    const { error } = await db
+      .from("menu_items")
+      .update({ takeaway_available: !item.takeaway_available })
+      .eq("id", itemId);
+    if (error) {
+      alert("Error updating takeaway status: " + error.message);
+    } else {
+      await loadDataFromSupabase();
+      renderMenuItemsList();
+    }
+  }
+};
+
+addItemBtn.addEventListener("click", addOrUpdateItem);
+cancelEditBtn.addEventListener("click", resetItemForm);
+document
+  .getElementById("addNewCategory")
+  .addEventListener("click", addNewCategory);
+
+document
+  .getElementById("clearCompletedBtn")
+  .addEventListener("click", clearCompleted);
+document
+  .getElementById("clearRejectedBtn")
+  .addEventListener("click", clearRejected);
+
+let expandedSections = new Set();
+
+window.toggleMenuSection = function (sectionId) {
+  const content = document.getElementById(`content-${sectionId}`);
+  const arrow = document.getElementById(`arrow-${sectionId}`);
+
+  if (!content || !arrow) return;
+
+  if (expandedSections.has(sectionId)) {
+    content.style.maxHeight = "0px";
+    content.style.opacity = "0";
+    arrow.style.transform = "rotate(-90deg)";
+    expandedSections.delete(sectionId);
+  } else {
+    content.style.maxHeight = "2000px";
+    content.style.opacity = "1";
+    arrow.style.transform = "rotate(0deg)";
+    expandedSections.add(sectionId);
+  }
+};
+
+function applyExpandedState() {
+  expandedSections.forEach((sectionId) => {
+    const content = document.getElementById(`content-${sectionId}`);
+    const arrow = document.getElementById(`arrow-${sectionId}`);
+
+    if (content && arrow) {
+      content.style.maxHeight = "2000px";
+      content.style.opacity = "1";
+      arrow.style.transform = "rotate(0deg)";
+    }
+  });
+}
+
+async function loadDataFromSupabase() {
+  const { data: items, error: itemsError } = await db
+    .from("menu_items")
+    .select("*");
+  if (itemsError) console.error("Error fetching menu items:", itemsError);
+  else menuItems = items;
+
+  const { data: categories, error: categoriesError } = await db
+    .from("categories")
+    .select("*");
+  if (categoriesError) {
+    console.error("Error fetching categories:", categoriesError);
+  } else {
+    availableCategories = categories;
+  }
+
+  updateCategoryDropdown();
+}
+
+function updateCategoryDropdown() {
+  const categorySelect = document.getElementById("newItemCategory");
+  if (!categorySelect) {
+    console.error("Could not find the category dropdown element!");
+    return;
+  }
+
+  categorySelect.innerHTML = '<option value="">Select category</option>';
+
+  availableCategories.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category.name;
+    option.textContent = category.name;
+    categorySelect.appendChild(option);
+  });
+}
+
+setInterval(async () => {
+  const { data, error } = await db
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (!error) {
+    renderAdminOrders(data);
+  }
+  console.log("done");
+}, 10000); // every 10 seconds
+
+init();

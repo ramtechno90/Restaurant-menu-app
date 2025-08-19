@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Menu App</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-content">
+            <div class="logo">🍽️ Delicious Bites</div>
+            <div class="nav-buttons">
+                <div id="cartIcon" class="cart-icon" onclick="showCartSection()">
+                    <span>🛒</span>
+                    <span id="cartCount" class="cart-count">0</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Customer Name Modal -->
+    <div id="nameModal" class="modal">
+        <div class="modal-content">
+            <h2>Welcome! 👋</h2>
+            <p>Please enter your name to start ordering:</p>
+            <p style="font-size: 12px; text-align: center; margin-top: -10px; margin-bottom: 20px;">By continuing, you agree to our <a href="terms.html" target="_blank" style="color: #ea580c;">Terms and Conditions</a> and <a href="privacy.html" target="_blank" style="color: #ea580c;">Privacy Policy</a>.</p>
+            <input type="text" id="customerName" placeholder="Your name" class="form-input">
+            <button id="startOrdering" class="btn btn-primary" style="width: 100%;">Start Ordering</button>
+        </div>
+    </div>
+
+    <!-- Customer View -->
+    <div id="customerView">
+        <!-- Menu Section -->
+        <div id="menuSection" class="container hidden" style="padding-top: 32px; padding-bottom: 32px;">
+            <div class="menu-header">
+                <h1>Our Menu</h1>
+                <p>Delicious food made with love</p>
+                <div id="customerGreeting" class="customer-greeting"></div>
+            </div>
+
+            <div id="menuContainer">
+                <!-- Menu items will be populated here -->
+            </div>
+
+            <!-- Fixed Cart Button -->
+            <button id="viewCartBtn" class="fixed-cart-btn hidden">
+                <span>🛒</span>
+                <span>View Cart</span>
+                <span id="cartTotal" class="cart-total-badge">$0.00</span>
+            </button>
+        </div>
+
+        <!-- Cart Section -->
+        <div id="cartSection" class="container hidden">
+            <div class="cart-container">
+                <div class="cart-header">
+                    <h2>Your Cart 🛒</h2>
+                    <a href="#" id="backToMenu" class="back-link">← Back to Menu</a>
+                </div>
+                
+                <div id="cartItems" class="cart-items">
+                    <!-- Cart items will be populated here -->
+                </div>
+                
+                <div class="cart-total">
+                    <div class="cart-total-row">
+                        <span>Total:</span>
+                        <span id="cartTotalAmount">$0.00</span>
+                    </div>
+                    <button id="proceedToCheckout" class="btn btn-success" style="width: 100%;" disabled>
+                        Proceed to Checkout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoice Section -->
+        <div id="invoiceSection" class="container hidden">
+            <div class="invoice-container invoice-print">
+                <div class="no-print">
+                    <div class="invoice-notice">
+                        <p>⚠️ Important Notice</p>
+                        <p>This invoice will disappear when you navigate away. Please take a screenshot for your records!</p>
+                    </div>
+                </div>
+                
+                <div class="invoice-header">
+                    <h1>🍽️ Delicious Bites</h1>
+                    <p>Order Invoice</p>
+                </div>
+                
+                <div id="invoiceContent">
+                    <!-- Invoice content will be populated here -->
+                </div>
+                
+                <div id="invoiceFooter" class="text-center no-print" style="margin-top: 32px; display: flex; gap: 12px; justify-content: center;">
+                     <button id="placeOrderBtn" class="btn btn-success">Place Order</button>
+                     <button id="modifyOrderBtn" class="btn btn-secondary">Modify Order</button>
+                     <button id="cancelOrderBtn" class="btn btn-danger">Cancel Order</button>
+                     <button id="newOrderBtn" class="btn btn-primary hidden">New Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center" style="padding: 20px; margin-top: 40px; color: #6b7280;">
+        <p>&copy; 2025 Delicious Bites. All Rights Reserved.</p>
+        <a href="terms.html" style="color: #ea580c; text-decoration: none; margin-right: 10px;">Terms and Conditions</a>
+        <a href="privacy.html" style="color: #ea580c; text-decoration: none;">Privacy Policy</a>
+    </footer>
+
+    <script src="customer.js"></script>
+</body>
+</html>
