@@ -34,7 +34,7 @@ async function checkUserSession() {
   if (session) {
     showDashboard();
     await loadDataFromSupabase();
-    await renderAdminOrders(); // Initial fetch
+    renderAdminOrders();
   } else {
     showLogin();
   }
@@ -174,7 +174,7 @@ function renderOrderSection(status, ordersList) {
         <div class="order-card">
             <div class="order-header">
                 <div class="order-info">
-                    <h4>Order #${order.id}</h4>
+                    <h4>Order #${order.daily_order_number}</h4>
                     <p>Customer: ${order.customer_name}</p>
                     <p style="font-size: 14px;">${new Date(
                       order.created_at
@@ -784,7 +784,6 @@ setInterval(async () => {
   if (!error) {
     renderAdminOrders(data);
   }
-  console.log("done");
 }, 10000); // every 10 seconds
 
 init();

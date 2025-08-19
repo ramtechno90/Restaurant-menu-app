@@ -18,10 +18,18 @@ let currentUser = "";
 let cart = [];
 let menuItems = [];
 let availableCategories = [];
+let currentView = "customer";
 
 // DOM Elements
+const customerBtn = document.getElementById("customerBtn");
+const adminBtn = document.getElementById("adminBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const manageMenuBtn = document.getElementById("manageMenuBtn");
 const customerView = document.getElementById("customerView");
+const adminView = document.getElementById("adminView");
+const menuManagementView = document.getElementById("menuManagementView");
 const nameModal = document.getElementById("nameModal");
+const adminLoginModal = document.getElementById("adminLoginModal");
 const customerName = document.getElementById("customerName");
 const startOrdering = document.getElementById("startOrdering");
 const menuSection = document.getElementById("menuSection");
@@ -36,15 +44,131 @@ const newOrderBtn = document.getElementById("newOrderBtn");
 const placeOrderBtn = document.getElementById("placeOrderBtn");
 const modifyOrderBtn = document.getElementById("modifyOrderBtn");
 const cancelOrderBtn = document.getElementById("cancelOrderBtn");
+const backToAdmin = document.getElementById("backToAdmin");
+const adminLoginBtn = document.getElementById("adminLoginBtn");
+const addItemBtn = document.getElementById("addItemBtn");
+const cancelEditBtn = document.getElementById("cancelEditBtn");
 
 // Initialize App
 async function init() {
   await loadDataFromSupabase();
   renderMenu();
   updateCartUI();
+  await checkUserSession();
+}
+
+async function checkUserSession() {
+  const {
+    data: { session },
+  } = await db.auth.getSession();
+  if (session) {
+    showAdminView();
+  } else {
+    showCustomerView();
+  }
 }
 
 // Navigation
+customerBtn.addEventListener("click", showCustomerView);
+
+adminBtn.addEventListener("click", async () => {
+  const {
+    data: { session },
+  } = await db.auth.getSession();
+  if (session) {
+    showAdminView();
+  } else {
+    adminLoginModal.classList.remove("hidden");
+  }
+});
+
+manageMenuBtn.addEventListener("click", showMenuManagementView);
+backToAdmin.addEventListener("click", showAdminView);
+logoutBtn.addEventListener("click", async () => {
+  await db.auth.signOut();
+  showCustomerView();
+});
+
+function showCustomerView() {
+  currentView = "customer";
+  customerView.classList.remove("hidden");
+  adminView.classList.add("hidden");
+  menuManagementView.classList.add("hidden");
+  cartIcon.classList.remove("hidden");
+  manageMenuBtn.classList.add("hidden");
+  logoutBtn.classList.add("hidden");
+  customerBtn.classList.add("btn-primary");
+  customerBtn.classList.remove("btn-secondary");
+  adminBtn.classList.add("btn-secondary");
+  adminBtn.classList.remove("btn-primary");
+
+  if (!currentUser) {
+    nameModal.classList.remove("hidden");
+  } else {
+    showMenuSection();
+  }
+}
+
+function showAdminView() {
+  currentView = "admin";
+  adminView.classList.remove("hidden");
+  customerView.classList.add("hidden");
+  menuManagementView.classList.add("hidden");
+  cartIcon.classList.add("hidden");
+  nameModal.classList.add("hidden");
+  adminLoginModal.classList.add("hidden");
+  manageMenuBtn.classList.remove("hidden");
+  logoutBtn.classList.remove("hidden");
+  adminBtn.classList.add("btn-primary");
+  adminBtn.classList.remove("btn-secondary");
+  customerBtn.classList.add("btn-secondary");
+  customerBtn.classList.remove("btn-primary");
+  renderAdminOrders();
+}
+
+function showMenuManagementView() {
+  currentView = "menuManagement";
+  menuManagementView.classList.remove("hidden");
+  adminView.classList.add("hidden");
+  customerView.classList.add("hidden");
+  cartIcon.classList.add("hidden");
+  nameModal.classList.add("hidden");
+  renderMenuItemsList();
+}
+
+// Customer Name Setup
+startOrdering.addEventListener("click", () => {
+  const name = customerName.value.trim();
+  if (name) {
+    currentUser = name;
+    nameModal.classList.add("hidden");
+    document.getElementById(
+      "customerGreeting"
+    ).textContent = `Welcome, ${name}! 👋`;
+    showMenuSection();
+  }
+});
+
+customerName.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    startOrdering.click();
+  }
+});
+
+// Admin Login
+adminLoginBtn.addEventListener("click", async () => {
+  const email = document.getElementById("adminEmail").value;
+  const password = document.getElementById("adminPassword").value;
+  const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    alert("Error: " + error.message);
+  } else {
+    showAdminView();
+  }
+});
+
+// Section Navigation
 function showMenuSection() {
   menuSection.classList.remove("hidden");
   cartSection.classList.add("hidden");
@@ -82,25 +206,6 @@ cancelOrderBtn.addEventListener("click", () => {
   cart = [];
   updateCartUI();
   showMenuSection();
-});
-
-// Customer Name Setup
-startOrdering.addEventListener("click", () => {
-  const name = customerName.value.trim();
-  if (name) {
-    currentUser = name;
-    nameModal.classList.add("hidden");
-    document.getElementById(
-      "customerGreeting"
-    ).textContent = `Welcome, ${name}! 👋`;
-    showMenuSection();
-  }
-});
-
-customerName.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    startOrdering.click();
-  }
 });
 
 // Menu Rendering
@@ -523,20 +628,35 @@ async function placeOrder() {
   placeOrderBtn.disabled = true;
   placeOrderBtn.textContent = "Placing Order...";
 
-  const { data: orderData, error } = await anonDb
+  // Step 1: Get the next daily order number from the database function
+  const { data: nextNumber, error: rpcError } = await anonDb.rpc(
+    "get_next_daily_order_number"
+  );
+
+  if (rpcError) {
+    console.error("Error fetching next order number:", rpcError);
+    alert("Error placing order: Could not generate order number.");
+    placeOrderBtn.disabled = false;
+    placeOrderBtn.textContent = "Place Order";
+    return;
+  }
+
+  // Step 2: Insert the order with the new number
+  const { data: orderData, error: insertError } = await anonDb
     .from("orders")
     .insert({
       customer_name: currentUser,
       total: totalAmount,
       items: cart,
       status: "Pending",
+      daily_order_number: nextNumber,
     })
     .select()
     .single();
 
-  if (error) {
-    console.error("Insert error:", error);
-    alert("Error placing order: " + error.message);
+  if (insertError) {
+    console.error("Insert error:", insertError);
+    alert("Error placing order: " + insertError.message);
     placeOrderBtn.disabled = false;
     placeOrderBtn.textContent = "Place Order";
     return;
@@ -544,7 +664,7 @@ async function placeOrder() {
 
   document.querySelector(
     ".invoice-footer p"
-  ).textContent = `Thank you for your order, ${currentUser}!`;
+  ).textContent = `Thank you for your order, ${currentUser}! Your order number is #${nextNumber}.`;
   document.getElementById("placeOrderBtn").classList.add("hidden");
   document.getElementById("modifyOrderBtn").classList.add("hidden");
   document.getElementById("cancelOrderBtn").classList.add("hidden");
