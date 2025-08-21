@@ -25,12 +25,26 @@ const increaseFontBtn = document.getElementById("increaseFont");
 const decreaseFontBtn = document.getElementById("decreaseFont");
 const saveRestaurantNameBtn = document.getElementById("saveRestaurantName");
 const restaurantNameInput = document.getElementById("restaurantNameInput");
+const hamburgerBtn = document.getElementById("hamburgerBtn");
+const navLinks = document.getElementById("navLinks");
 
 // Initialize App
 async function init() {
   loadAppearanceSettings();
   await checkUserSession();
 }
+
+hamburgerBtn.addEventListener("click", (e) => {
+  e.stopPropagation(); // Prevent the click from immediately closing the menu
+  navLinks.classList.toggle("active");
+});
+
+// Close navbar when clicking outside of it
+document.addEventListener("click", (e) => {
+  if (!navLinks.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+    navLinks.classList.remove("active");
+  }
+});
 
 async function checkUserSession() {
   const {
@@ -46,11 +60,18 @@ async function checkUserSession() {
 }
 
 // Navigation
-dashboardBtn.addEventListener("click", showDashboard);
-manageMenuBtn.addEventListener("click", showMenuManagementView);
+dashboardBtn.addEventListener("click", () => {
+  showDashboard();
+  navLinks.classList.remove("active");
+});
+manageMenuBtn.addEventListener("click", () => {
+  showMenuManagementView();
+  navLinks.classList.remove("active");
+});
 logoutBtn.addEventListener("click", async () => {
   await db.auth.signOut();
   showLogin();
+  navLinks.classList.remove("active");
 });
 
 function showLogin() {
