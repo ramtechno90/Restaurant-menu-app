@@ -13,6 +13,10 @@
         <div class="nav-content">
             <div class="logo">🍽️ Delicious Bites</div>
             <div class="nav-buttons">
+                <div class="font-size-controls">
+                    <button id="decreaseFont" class="font-btn">A-</button>
+                    <button id="increaseFont" class="font-btn">A+</button>
+                </div>
                 <div id="cartIcon" class="cart-icon" onclick="showCartSection()">
                     <span>🛒</span>
                     <span id="cartCount" class="cart-count">0</span>
@@ -50,7 +54,7 @@
             <button id="viewCartBtn" class="fixed-cart-btn hidden">
                 <span>🛒</span>
                 <span>View Cart</span>
-                <span id="cartTotal" class="cart-total-badge">$0.00</span>
+                <span id="cartTotal" class="cart-total-badge">₹0.00</span>
             </button>
         </div>
 
@@ -69,7 +73,7 @@
                 <div class="cart-total">
                     <div class="cart-total-row">
                         <span>Total:</span>
-                        <span id="cartTotalAmount">$0.00</span>
+                        <span id="cartTotalAmount">₹0.00</span>
                     </div>
                     <button id="proceedToCheckout" class="btn btn-success" style="width: 100%;" disabled>
                         Proceed to Checkout
@@ -116,4 +120,4 @@
 
     <script src="customer.js"></script>
 </body>
-</html>  
+</html>

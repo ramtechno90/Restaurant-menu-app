@@ -36,9 +36,12 @@ const newOrderBtn = document.getElementById("newOrderBtn");
 const placeOrderBtn = document.getElementById("placeOrderBtn");
 const modifyOrderBtn = document.getElementById("modifyOrderBtn");
 const cancelOrderBtn = document.getElementById("cancelOrderBtn");
+const increaseFontBtn = document.getElementById("increaseFont");
+const decreaseFontBtn = document.getElementById("decreaseFont");
 
 // Initialize App
 async function init() {
+  loadAppearanceSettings();
   await loadDataFromSupabase();
   renderMenu();
   updateCartUI();
@@ -149,7 +152,7 @@ function renderMenu() {
                         <h3 class="menu-name">${item.name}</h3>
                         <p class="menu-description">${item.description}</p>
                         <div class="menu-footer">
-                            <span class="menu-price">$${item.price}</span>
+                            <span class="menu-price">₹${item.price}</span>
                             <button onclick="addToCart(${
                               item.id
                             })" class="btn btn-primary" ${
@@ -282,12 +285,12 @@ function updateCartUI() {
   );
 
   cartCount.textContent = totalItems;
-  document.getElementById("cartTotal").textContent = `$${totalAmount.toFixed(
+  document.getElementById("cartTotal").textContent = `₹${totalAmount.toFixed(
     2
   )}`;
   document.getElementById(
     "cartTotalAmount"
-  ).textContent = `$${totalAmount.toFixed(2)}`;
+  ).textContent = `₹${totalAmount.toFixed(2)}`;
 
   proceedToCheckout.disabled = cart.length === 0;
 
@@ -316,11 +319,11 @@ function renderCart() {
                 <div class="cart-item-info">
                     <div class="cart-item-details">
                         <h4>${item.name}</h4>
-                        <p>$${item.price} each • Total: ${totalQty} items</p>
+                        <p>₹${item.price} each • Total: ${totalQty} items</p>
                     </div>
                 </div>
                 <div class="cart-item-controls">
-                    <span style="font-weight: bold; color: #ea580c;">$${(
+                    <span style="font-weight: bold; color: #ea580c;">₹${(
                       item.price * totalQty
                     ).toFixed(2)}</span>
                     <button onclick="removeFromCart('${
@@ -334,7 +337,7 @@ function renderCart() {
                     <div class="option-header" onclick="toggleOption('dining-${
                       item.cartId
                     }')">
-                        <span>🍽️ Dining Options & Quantities</span>
+                        <span><span class="order-icon">🍽️</span> Dining Options & Quantities</span>
                         <span class="option-arrow" id="arrow-dining-${
                           item.cartId
                         }">▼</span>
@@ -345,7 +348,7 @@ function renderCart() {
                         <div style="display: flex; flex-direction: column; gap: 12px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px;">
                                 <span style="display: flex; align-items: center; gap: 8px; font-weight: 500;">
-                                    🍽️ Dine-in
+                                    <span class="order-icon">🍽️</span> Dine-in
                                 </span>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <button onclick="updateDiningQuantity('${
@@ -372,7 +375,7 @@ function renderCart() {
                                 : ""
                             }">
                                 <span style="display: flex; align-items: center; gap: 8px; font-weight: 500;">
-                                    📦 Takeaway ${
+                                    <span class="order-icon">📦</span> Takeaway ${
                                       !item.takeaway_available
                                         ? "(Not Available)"
                                         : ""
@@ -468,9 +471,13 @@ function renderInvoicePreview() {
                 const totalQty = item.dineInQty + item.takeawayQty;
                 let diningDetails = [];
                 if (item.dineInQty > 0)
-                  diningDetails.push(`🍽️ Dine-in: ${item.dineInQty}`);
+                  diningDetails.push(
+                    `<span class="order-icon">🍽️</span> Dine-in: ${item.dineInQty}`
+                  );
                 if (item.takeawayQty > 0)
-                  diningDetails.push(`📦 Takeaway: ${item.takeawayQty}`);
+                  diningDetails.push(
+                    `<span class="order-icon">📦</span> Takeaway: ${item.takeawayQty}`
+                  );
 
                 return `
                 <div class="invoice-item">
@@ -490,7 +497,7 @@ function renderInvoicePreview() {
                             }
                         </div>
                     </div>
-                    <span style="font-weight: bold;">$${(
+                    <span style="font-weight: bold;">₹${(
                       item.price * totalQty
                     ).toFixed(2)}</span>
                 </div>
@@ -502,7 +509,7 @@ function renderInvoicePreview() {
         <div class="invoice-total">
             <div class="invoice-total-row">
                 <span>Total Amount:</span>
-                <span class="invoice-total-amount">$${totalAmount.toFixed(
+                <span class="invoice-total-amount">₹${totalAmount.toFixed(
                   2
                 )}</span>
             </div>
@@ -523,7 +530,6 @@ async function placeOrder() {
   placeOrderBtn.disabled = true;
   placeOrderBtn.textContent = "Placing Order...";
 
-  // Step 1: Get the next daily order number from the database function
   const { data: nextNumber, error: rpcError } = await anonDb.rpc(
     "get_next_daily_order_number"
   );
@@ -536,7 +542,6 @@ async function placeOrder() {
     return;
   }
 
-  // Step 2: Insert the order with the new number
   const { data: orderData, error: insertError } = await anonDb
     .from("orders")
     .insert({
@@ -590,5 +595,34 @@ async function loadDataFromSupabase() {
 
   renderMenu();
 }
+
+// Appearance Settings
+function changeFontSize(amount) {
+  const html = document.documentElement;
+  let currentSize = parseFloat(getComputedStyle(html).fontSize);
+  let newSize = currentSize + amount;
+  if (newSize >= 12 && newSize <= 24) {
+    // Set min and max font size
+    html.style.fontSize = `${newSize}px`;
+    localStorage.setItem("fontSize", newSize);
+  }
+}
+
+function loadAppearanceSettings() {
+  const savedFontSize = localStorage.getItem("fontSize");
+  if (savedFontSize) {
+    document.documentElement.style.fontSize = `${savedFontSize}px`;
+  }
+
+  const savedRestaurantName = localStorage.getItem("restaurantName");
+  if (savedRestaurantName) {
+    document.querySelectorAll(".logo").forEach((logo) => {
+      logo.textContent = `🍽️ ${savedRestaurantName}`;
+    });
+  }
+}
+
+increaseFontBtn.addEventListener("click", () => changeFontSize(1));
+decreaseFontBtn.addEventListener("click", () => changeFontSize(-1));
 
 init();

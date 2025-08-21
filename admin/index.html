@@ -13,6 +13,10 @@
         <div class="nav-content">
             <div class="logo">🍽️ Delicious Bites - Admin</div>
             <div class="nav-buttons">
+                 <div class="font-size-controls">
+                    <button id="decreaseFont" class="font-btn">A-</button>
+                    <button id="increaseFont" class="font-btn">A+</button>
+                </div>
                 <button id="dashboardBtn" class="btn btn-primary hidden">Dashboard</button>
                 <button id="manageMenuBtn" class="btn btn-secondary hidden">Manage Menu</button>
                 <button id="logoutBtn" class="btn btn-danger hidden">Logout</button>
@@ -115,36 +119,46 @@
     <div id="menuManagementView" class="container hidden">
         <div class="admin-container">
             <div class="admin-header">
-                <h2>Menu Management 📝</h2>
+                <h2>Menu & Restaurant Management 📝</h2>
             </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-                <div>
-                    <h3 style="margin-bottom: 16px;" id="formTitle">Add New Item</h3>
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <input type="hidden" id="editItemId">
-                        <input type="text" id="newItemName" placeholder="Item name" class="form-input">
-                        <input type="number" id="newItemPrice" placeholder="Price" step="0.01" class="form-input">
-                        <select id="newItemCategory" class="form-input">
-                            <option value="">Select category</option>
-                        </select>
-                        <input type="text" id="newItemEmoji" placeholder="Emoji (optional, e.g., 🍔)" class="form-input">
-                        <textarea id="newItemDescription" placeholder="Description" class="form-input" rows="3"></textarea>
-                        <button id="addItemBtn" class="btn btn-success">Add Item</button>
-                        <button id="cancelEditBtn" class="btn btn-secondary hidden">Cancel Edit</button>
-                    </div>
+            <div class="management-section restaurant-settings">
+                <h3>Restaurant Settings</h3>
+                <input type="text" id="restaurantNameInput" placeholder="Restaurant Name" class="form-input">
+                <button id="saveRestaurantName" class="btn btn-primary">Save Name</button>
+            </div>
+
+            <div class="management-section category-management">
+                <h3>Category Management</h3>
+                <div id="categoryList" class="category-management-list">
+                    <!-- Categories will be populated here -->
                 </div>
-                
-                <div>
+                 <div>
                     <h3 style="margin-bottom: 16px;">Add New Category</h3>
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; gap: 12px;">
                         <input type="text" id="newCategoryName" placeholder="Category name" class="form-input">
                         <button id="addNewCategory" class="btn btn-success">Add Category</button>
                     </div>
                 </div>
             </div>
+
+            <div class="management-section item-management">
+                 <h3 style="margin-bottom: 16px;" id="formTitle">Add New Item</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <input type="hidden" id="editItemId">
+                    <input type="text" id="newItemName" placeholder="Item name" class="form-input">
+                    <input type="number" id="newItemPrice" placeholder="Price" step="0.01" class="form-input">
+                    <select id="newItemCategory" class="form-input">
+                        <option value="">Select category</option>
+                    </select>
+                    <input type="text" id="newItemEmoji" placeholder="Emoji (optional, e.g., 🍔)" class="form-input">
+                    <textarea id="newItemDescription" placeholder="Description" class="form-input" rows="3"></textarea>
+                    <button id="addItemBtn" class="btn btn-success">Add Item</button>
+                    <button id="cancelEditBtn" class="btn btn-secondary hidden">Cancel Edit</button>
+                </div>
+            </div>
             
-            <div>
+            <div class="management-section">
                 <h3 style="margin-bottom: 16px;">Current Menu Items</h3>
                 <div id="menuItemsList">
                     <!-- Menu items will be populated here -->

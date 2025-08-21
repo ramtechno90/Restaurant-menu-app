@@ -1,6 +1,14 @@
 /* Paste the entire CSS content from the original file here */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+:root {
+    --base-font-size: 16px;
+}
+
+html {
+    font-size: var(--base-font-size);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -38,7 +46,7 @@ nav {
 }
 
 .logo {
-    font-size: 24px;
+    font-size: 1.5rem;
     font-weight: bold;
     color: #ea580c;
 }
@@ -47,6 +55,20 @@ nav {
     display: flex;
     align-items: center;
     gap: 16px;
+}
+
+.font-size-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.font-btn {
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-weight: bold;
 }
 
 .btn {
@@ -99,7 +121,7 @@ nav {
 .cart-icon {
     position: relative;
     cursor: pointer;
-    font-size: 24px;
+    font-size: 1.8rem;
 }
 
 .cart-count {
@@ -108,7 +130,7 @@ nav {
     right: -8px;
     background: #ef4444;
     color: white;
-    font-size: 12px;
+    font-size: 0.75rem;
     border-radius: 50%;
     width: 20px;
     height: 20px;
@@ -148,7 +170,7 @@ nav {
 }
 
 .modal h2 {
-    font-size: 24px;
+    font-size: 1.5rem;
     font-weight: bold;
     color: #1f2937;
     margin-bottom: 16px;
@@ -165,7 +187,7 @@ nav {
     border: 1px solid #d1d5db;
     border-radius: 8px;
     margin-bottom: 16px;
-    font-size: 16px;
+    font-size: 1rem;
 }
 
 .form-input:focus {
@@ -181,7 +203,7 @@ nav {
 }
 
 .menu-header h1 {
-    font-size: 36px;
+    font-size: 2.25rem;
     font-weight: bold;
     color: #1f2937;
     margin-bottom: 8px;
@@ -189,12 +211,12 @@ nav {
 
 .menu-header p {
     color: #6b7280;
-    font-size: 18px;
+    font-size: 1.125rem;
 }
 
 .customer-greeting {
     margin-top: 16px;
-    font-size: 18px;
+    font-size: 1.125rem;
     font-weight: 600;
     color: #ea580c;
 }
@@ -215,7 +237,7 @@ nav {
 }
 
 .category-title {
-    font-size: 24px;
+    font-size: 1.5rem;
     font-weight: bold;
     color: #1f2937;
     border-bottom: 2px solid #fed7aa;
@@ -236,12 +258,12 @@ nav {
     color: #ea580c;
     padding: 4px 12px;
     border-radius: 20px;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 600;
 }
 
 .category-arrow {
-    font-size: 20px;
+    font-size: 1.25rem;
     transition: transform 0.3s ease;
 }
 
@@ -296,7 +318,7 @@ nav {
 }
 
 .menu-name {
-    font-size: 20px;
+    font-size: 1.25rem;
     font-weight: 600;
     color: #1f2937;
     margin-bottom: 8px;
@@ -304,7 +326,7 @@ nav {
 
 .menu-description {
     color: #6b7280;
-    font-size: 14px;
+    font-size: 0.875rem;
     margin-bottom: 16px;
 }
 
@@ -315,7 +337,7 @@ nav {
 }
 
 .menu-price {
-    font-size: 24px;
+    font-size: 1.5rem;
     font-weight: bold;
     color: #ea580c;
 }
@@ -337,7 +359,7 @@ nav {
 }
 
 .cart-header h2 {
-    font-size: 24px;
+    font-size: 1.5rem;
     font-weight: bold;
     color: #1f2937;
 }
@@ -379,7 +401,7 @@ nav {
 }
 
 .cart-item-emoji {
-    font-size: 24px;
+    font-size: 1.5rem;
 }
 
 .cart-item-details h4 {
@@ -389,7 +411,7 @@ nav {
 
 .cart-item-details p {
     color: #6b7280;
-    font-size: 14px;
+    font-size: 0.875rem;
 }
 
 .cart-item-controls {
@@ -419,13 +441,14 @@ nav {
     font-weight: 600;
     width: 32px;
     text-align: center;
+    font-size: 1.2rem;
 }
 
 .remove-btn {
     color: #ef4444;
     background: none;
     border: none;
-    font-size: 20px;
+    font-size: 1.25rem;
     cursor: pointer;
     margin-left: 16px;
 }
@@ -457,7 +480,7 @@ nav {
 }
 
 .option-arrow {
-    font-size: 12px;
+    font-size: 0.75rem;
     transition: transform 0.3s ease;
     transform: rotate(-90deg);
 }
@@ -494,7 +517,7 @@ nav {
     cursor: pointer;
     font-weight: 500;
     transition: all 0.3s ease;
-    font-size: 14px;
+    font-size: 0.875rem;
 }
 
 .dining-btn:hover {
@@ -517,7 +540,7 @@ nav {
     padding: 8px 12px;
     border: 1px solid #d1d5db;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-family: inherit;
     resize: vertical;
     min-height: 60px;
@@ -543,7 +566,7 @@ nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 20px;
+    font-size: 1.25rem;
     font-weight: bold;
     margin-bottom: 16px;
 }
@@ -577,7 +600,7 @@ nav {
     background: #dc2626;
     padding: 4px 8px;
     border-radius: 20px;
-    font-size: 14px;
+    font-size: 0.875rem;
 }
 
 /* Invoice Section */
@@ -604,7 +627,7 @@ nav {
 
 .invoice-notice p:last-child {
     color: #a16207;
-    font-size: 14px;
+    font-size: 0.875rem;
     margin-top: 4px;
 }
 
@@ -614,7 +637,7 @@ nav {
 }
 
 .invoice-header h1 {
-    font-size: 32px;
+    font-size: 2rem;
     font-weight: bold;
     color: #1f2937;
 }
@@ -661,7 +684,7 @@ nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 20px;
+    font-size: 1.25rem;
     font-weight: bold;
 }
 
@@ -676,7 +699,7 @@ nav {
 }
 
 .invoice-footer p:first-child {
-    font-size: 18px;
+    font-size: 1.125rem;
     color: #1f2937;
     margin-bottom: 4px;
 }
@@ -698,13 +721,13 @@ nav {
 }
 
 .admin-header h2 {
-    font-size: 24px;
+    font-size: 1.5rem;
     font-weight: bold;
     color: #1f2937;
 }
 
 .admin-header h3 {
-    font-size: 20px;
+    font-size: 1.25rem;
     font-weight: 600;
     color: #1f2937;
 }
@@ -743,7 +766,7 @@ nav {
     right: 4px;
     background: #ef4444;
     color: white;
-    font-size: 10px;
+    font-size: 0.625rem;
     border-radius: 50%;
     width: 16px;
     height: 16px;
@@ -769,7 +792,7 @@ nav {
 
 .order-actions .btn {
     padding: 6px 12px;
-    font-size: 12px;
+    font-size: 0.75rem;
 }
 
 .order-card {
@@ -788,7 +811,7 @@ nav {
 
 .order-info h4 {
     font-weight: 600;
-    font-size: 18px;
+    font-size: 1.125rem;
     color: #1f2937;
 }
 
@@ -802,15 +825,20 @@ nav {
     color: #065f46;
     padding: 4px 12px;
     border-radius: 20px;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 600;
 }
 
 .order-total {
     font-weight: bold;
-    font-size: 18px;
+    font-size: 1.125rem;
     color: #10b981;
     margin-top: 4px;
+    text-align: right;
+}
+
+.price-align {
+    text-align: right;
 }
 
 .order-items {
@@ -822,12 +850,43 @@ nav {
 .order-item {
     display: flex;
     justify-content: space-between;
-    font-size: 14px;
+    font-size: 0.875rem;
     margin-bottom: 4px;
 }
 
 .order-item:last-child {
     margin-bottom: 0;
+}
+
+.order-icon {
+    font-size: 1.5rem;
+    vertical-align: middle;
+}
+
+.management-section {
+    margin-bottom: 48px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.restaurant-settings, .category-management, .item-management {
+    margin-bottom: 24px;
+}
+
+.category-management-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.category-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
 }
 
 /* Utility Classes */
@@ -843,7 +902,7 @@ nav {
     color: #6b7280;
     text-align: center;
     padding: 32px;
-    font-size: 18px;
+    font-size: 1.125rem;
 }
 
 /* Mobile Responsive - Mobile First Approach */
@@ -858,7 +917,7 @@ nav {
     }
     
     .logo {
-        font-size: 18px;
+        font-size: 1.125rem;
     }
     
     .nav-buttons {
@@ -867,7 +926,7 @@ nav {
     
     .btn {
         padding: 8px 12px;
-        font-size: 13px;
+        font-size: 0.8125rem;
         border-radius: 6px;
     }
     
@@ -876,16 +935,16 @@ nav {
     }
     
     .menu-header h1 {
-        font-size: 24px;
+        font-size: 1.5rem;
         margin-bottom: 6px;
     }
     
     .menu-header p {
-        font-size: 15px;
+        font-size: 0.9375rem;
     }
     
     .customer-greeting {
-        font-size: 16px;
+        font-size: 1rem;
         margin-top: 12px;
     }
     
@@ -894,13 +953,13 @@ nav {
     }
     
     .category-title {
-        font-size: 18px;
+        font-size: 1.125rem;
         padding-bottom: 6px;
     }
     
     .item-count {
         padding: 2px 8px;
-        font-size: 12px;
+        font-size: 0.75rem;
     }
     
     .category-info {
@@ -922,27 +981,27 @@ nav {
     }
     
     .menu-emoji {
-        font-size: 36px;
+        font-size: 2.25rem;
         margin-bottom: 8px;
         display: block;
         text-align: center;
     }
     
     .menu-name {
-        font-size: 17px;
+        font-size: 1.0625rem;
         margin-bottom: 6px;
         text-align: center;
     }
     
     .menu-description {
-        font-size: 13px;
+        font-size: 0.8125rem;
         margin-bottom: 12px;
         line-height: 1.4;
         text-align: center;
     }
     
     .menu-price {
-        font-size: 18px;
+        font-size: 1.125rem;
     }
     
     .menu-footer {
@@ -954,7 +1013,7 @@ nav {
     .menu-footer .btn {
         width: 100%;
         padding: 12px 16px;
-        font-size: 14px;
+        font-size: 0.875rem;
         font-weight: 600;
     }
     
@@ -974,7 +1033,7 @@ nav {
     }
     
     .cart-header h2 {
-        font-size: 20px;
+        font-size: 1.25rem;
     }
     
     .cart-item {
@@ -1002,15 +1061,15 @@ nav {
     }
     
     .cart-item-emoji {
-        font-size: 20px;
+        font-size: 1.25rem;
     }
     
     .cart-item-details h4 {
-        font-size: 16px;
+        font-size: 1rem;
     }
     
     .cart-item-details p {
-        font-size: 13px;
+        font-size: 0.8125rem;
     }
     
     .dining-buttons {
@@ -1020,28 +1079,28 @@ nav {
     
     .dining-btn {
         padding: 6px 10px;
-        font-size: 13px;
+        font-size: 0.8125rem;
     }
     
     .note-input {
         padding: 6px 10px;
-        font-size: 13px;
+        font-size: 0.8125rem;
         min-height: 50px;
     }
     
     .quantity-btn {
         width: 28px;
         height: 28px;
-        font-size: 14px;
+        font-size: 0.875rem;
     }
     
     .quantity {
         width: 28px;
-        font-size: 14px;
+        font-size: 0.875rem;
     }
     
     .cart-total-row {
-        font-size: 18px;
+        font-size: 1.125rem;
         margin-bottom: 12px;
     }
     
@@ -1049,17 +1108,17 @@ nav {
         bottom: 12px;
         right: 12px;
         padding: 10px 14px;
-        font-size: 14px;
+        font-size: 0.875rem;
         gap: 8px;
     }
     
     .cart-total-badge {
         padding: 3px 6px;
-        font-size: 12px;
+        font-size: 0.75rem;
     }
     
     .invoice-header h1 {
-        font-size: 24px;
+        font-size: 1.5rem;
     }
     
     .invoice-row {
@@ -1087,7 +1146,7 @@ nav {
     }
     
     .invoice-total-row {
-        font-size: 18px;
+        font-size: 1.125rem;
     }
     
     .order-card {
@@ -1104,15 +1163,15 @@ nav {
     }
     
     .order-info h4 {
-        font-size: 16px;
+        font-size: 1rem;
     }
     
     .order-info p {
-        font-size: 13px;
+        font-size: 0.8125rem;
     }
     
     .order-total {
-        font-size: 16px;
+        font-size: 1rem;
     }
     
     .order-items {
@@ -1120,7 +1179,7 @@ nav {
     }
     
     .order-item {
-        font-size: 13px;
+        font-size: 0.8125rem;
         margin-bottom: 6px;
     }
     
@@ -1133,7 +1192,7 @@ nav {
     .order-actions .btn {
         width: 100%;
         padding: 8px 12px;
-        font-size: 13px;
+        font-size: 0.8125rem;
     }
     
     .admin-header {
@@ -1144,11 +1203,11 @@ nav {
     }
     
     .admin-header h2 {
-        font-size: 20px;
+        font-size: 1.25rem;
     }
     
     .admin-header h3 {
-        font-size: 18px;
+        font-size: 1.125rem;
     }
     
     .admin-tabs {
@@ -1160,7 +1219,7 @@ nav {
         flex: 1;
         min-width: calc(50% - 2px);
         padding: 8px 12px;
-        font-size: 12px;
+        font-size: 0.75rem;
         text-align: center;
     }
 }
@@ -1176,12 +1235,12 @@ nav {
     }
     
     .logo {
-        font-size: 16px;
+        font-size: 1rem;
     }
     
     .btn {
         padding: 6px 10px;
-        font-size: 12px;
+        font-size: 0.75rem;
     }
     
     .modal-content {
@@ -1191,18 +1250,18 @@ nav {
     }
     
     .modal h2 {
-        font-size: 20px;
+        font-size: 1.25rem;
         margin-bottom: 12px;
     }
     
     .modal p {
-        font-size: 14px;
+        font-size: 0.875rem;
         margin-bottom: 12px;
     }
     
     .form-input {
         padding: 10px;
-        font-size: 14px;
+        font-size: 0.875rem;
         margin-bottom: 12px;
     }
     
@@ -1211,19 +1270,19 @@ nav {
     }
     
     .menu-header h1 {
-        font-size: 22px;
+        font-size: 1.375rem;
     }
     
     .menu-header p {
-        font-size: 14px;
+        font-size: 0.875rem;
     }
     
     .customer-greeting {
-        font-size: 15px;
+        font-size: 0.9375rem;
     }
     
     .category-title {
-        font-size: 16px;
+        font-size: 1rem;
     }
     
     .menu-grid {
@@ -1236,27 +1295,26 @@ nav {
     }
     
     .menu-emoji {
-        font-size: 32px;
-        margin-bottom: 6px;
+        font-size: 2rem;
     }
     
     .menu-name {
-        font-size: 16px;
+        font-size: 1rem;
         margin-bottom: 4px;
     }
     
     .menu-description {
-        font-size: 12px;
+        font-size: 0.75rem;
         margin-bottom: 10px;
     }
     
     .menu-price {
-        font-size: 16px;
+        font-size: 1rem;
     }
     
     .menu-footer .btn {
         padding: 6px 12px;
-        font-size: 12px;
+        font-size: 0.75rem;
     }
     
     .cart-container,
@@ -1267,11 +1325,11 @@ nav {
     }
     
     .cart-header h2 {
-        font-size: 18px;
+        font-size: 1.125rem;
     }
     
     .back-link {
-        font-size: 14px;
+        font-size: 0.875rem;
     }
     
     .cart-item {
@@ -1288,45 +1346,45 @@ nav {
     }
     
     .cart-item-emoji {
-        font-size: 18px;
+        font-size: 1.125rem;
     }
     
     .cart-item-details h4 {
-        font-size: 15px;
+        font-size: 0.9375rem;
     }
     
     .cart-item-details p {
-        font-size: 12px;
+        font-size: 0.75rem;
     }
     
     .dining-btn {
         padding: 5px 8px;
-        font-size: 12px;
+        font-size: 0.75rem;
     }
     
     .note-input {
         padding: 5px 8px;
-        font-size: 12px;
+        font-size: 0.75rem;
         min-height: 45px;
     }
     
     .quantity-btn {
         width: 26px;
         height: 26px;
-        font-size: 13px;
+        font-size: 0.8125rem;
     }
     
     .quantity {
         width: 26px;
-        font-size: 13px;
+        font-size: 0.8125rem;
     }
     
     .remove-btn {
-        font-size: 16px;
+        font-size: 1rem;
     }
     
     .cart-total-row {
-        font-size: 16px;
+        font-size: 1rem;
         margin-bottom: 10px;
     }
     
@@ -1334,7 +1392,7 @@ nav {
         bottom: 10px;
         right: 10px;
         padding: 8px 12px;
-        font-size: 13px;
+        font-size: 0.8125rem;
         border-radius: 25px;
     }
     
@@ -1344,7 +1402,7 @@ nav {
     
     .cart-total-badge {
         padding: 2px 5px;
-        font-size: 11px;
+        font-size: 0.6875rem;
     }
     
     .invoice-notice {
@@ -1353,11 +1411,11 @@ nav {
     }
     
     .invoice-notice p:first-child {
-        font-size: 14px;
+        font-size: 0.875rem;
     }
     
     .invoice-notice p:last-child {
-        font-size: 12px;
+        font-size: 0.75rem;
     }
     
     .invoice-header {
@@ -1365,11 +1423,11 @@ nav {
     }
     
     .invoice-header h1 {
-        font-size: 20px;
+        font-size: 1.25rem;
     }
     
     .invoice-header p {
-        font-size: 14px;
+        font-size: 0.875rem;
     }
     
     .invoice-details {
@@ -1378,16 +1436,16 @@ nav {
     }
     
     .invoice-row div p:first-child {
-        font-size: 15px;
+        font-size: 0.9375rem;
     }
     
     .invoice-row div p:last-child {
-        font-size: 12px;
+        font-size: 0.75rem;
     }
     
     .invoice-item {
         padding: 6px 0;
-        font-size: 13px;
+        font-size: 0.8125rem;
     }
     
     .invoice-item-info {
@@ -1396,7 +1454,7 @@ nav {
     }
     
     .invoice-total-row {
-        font-size: 16px;
+        font-size: 1rem;
     }
     
     .invoice-footer {
@@ -1404,19 +1462,19 @@ nav {
     }
     
     .invoice-footer p:first-child {
-        font-size: 16px;
+        font-size: 1rem;
     }
     
     .invoice-footer p:last-child {
-        font-size: 13px;
+        font-size: 0.8125rem;
     }
     
     .admin-header h2 {
-        font-size: 18px;
+        font-size: 1.125rem;
     }
     
     .admin-header h3 {
-        font-size: 16px;
+        font-size: 1rem;
     }
     
     .order-card {
@@ -1425,20 +1483,20 @@ nav {
     }
     
     .order-info h4 {
-        font-size: 15px;
+        font-size: 0.9375rem;
     }
     
     .order-info p {
-        font-size: 12px;
+        font-size: 0.75rem;
     }
     
     .order-status {
         padding: 2px 8px;
-        font-size: 12px;
+        font-size: 0.75rem;
     }
     
     .order-total {
-        font-size: 15px;
+        font-size: 0.9375rem;
     }
     
     .order-items {
@@ -1446,13 +1504,13 @@ nav {
     }
     
     .order-item {
-        font-size: 12px;
+        font-size: 0.75rem;
         margin-bottom: 4px;
     }
     
     .empty-state {
         padding: 20px;
-        font-size: 16px;
+        font-size: 1rem;
     }
 }
 
@@ -1463,7 +1521,7 @@ nav {
     }
     
     .logo {
-        font-size: 15px;
+        font-size: 0.9375rem;
     }
     
     .nav-buttons {
@@ -1472,7 +1530,7 @@ nav {
     
     .btn {
         padding: 5px 8px;
-        font-size: 11px;
+        font-size: 0.6875rem;
     }
     
     .container {
@@ -1480,11 +1538,11 @@ nav {
     }
     
     .menu-header h1 {
-        font-size: 20px;
+        font-size: 1.25rem;
     }
     
     .category-title {
-        font-size: 15px;
+        font-size: 0.9375rem;
     }
     
     .menu-card-content {
@@ -1492,19 +1550,19 @@ nav {
     }
     
     .menu-emoji {
-        font-size: 28px;
+        font-size: 1.75rem;
     }
     
     .menu-name {
-        font-size: 15px;
+        font-size: 0.9375rem;
     }
     
     .menu-description {
-        font-size: 11px;
+        font-size: 0.6875rem;
     }
     
     .menu-price {
-        font-size: 15px;
+        font-size: 0.9375rem;
     }
     
     .fixed-cart-btn {

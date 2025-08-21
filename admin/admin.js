@@ -21,9 +21,14 @@ const adminLoginModal = document.getElementById("adminLoginModal");
 const adminLoginBtn = document.getElementById("adminLoginBtn");
 const addItemBtn = document.getElementById("addItemBtn");
 const cancelEditBtn = document.getElementById("cancelEditBtn");
+const increaseFontBtn = document.getElementById("increaseFont");
+const decreaseFontBtn = document.getElementById("decreaseFont");
+const saveRestaurantNameBtn = document.getElementById("saveRestaurantName");
+const restaurantNameInput = document.getElementById("restaurantNameInput");
 
 // Initialize App
 async function init() {
+  loadAppearanceSettings();
   await checkUserSession();
 }
 
@@ -34,7 +39,7 @@ async function checkUserSession() {
   if (session) {
     showDashboard();
     await loadDataFromSupabase();
-    renderAdminOrders();
+    await renderAdminOrders(); // Initial fetch
   } else {
     showLogin();
   }
@@ -78,6 +83,7 @@ function showMenuManagementView() {
   dashboardBtn.classList.add("btn-secondary");
   dashboardBtn.classList.remove("btn-primary");
   renderMenuItemsList();
+  renderCategoryList();
 }
 
 // Admin Login
@@ -180,11 +186,11 @@ function renderOrderSection(status, ordersList) {
                       order.created_at
                     ).toLocaleString()}</p>
                 </div>
-                <div style="text-align: right;">
+                <div class="price-align">
                     <span class="order-status" style="background: ${getStatusColor(
                       order.status
                     )};">${order.status}</span>
-                    <p class="order-total">$${order.total.toFixed(2)}</p>
+                    <p class="order-total">₹${order.total.toFixed(2)}</p>
                 </div>
             </div>
             <div class="order-items">
@@ -193,9 +199,13 @@ function renderOrderSection(status, ordersList) {
                     const totalQty = item.dineInQty + item.takeawayQty;
                     let diningDetails = [];
                     if (item.dineInQty > 0)
-                      diningDetails.push(`🍽️ ${item.dineInQty}`);
+                      diningDetails.push(
+                        `<span class="order-icon">🍽️</span> ${item.dineInQty}`
+                      );
                     if (item.takeawayQty > 0)
-                      diningDetails.push(`📦 ${item.takeawayQty}`);
+                      diningDetails.push(
+                        `<span class="order-icon">📦</span> ${item.takeawayQty}`
+                      );
 
                     return `
                     <div class="order-item">
@@ -216,9 +226,6 @@ function renderOrderSection(status, ordersList) {
                                     }
                                 </div>
                             </span>
-                            <span style="font-weight: 600;">$${(
-                              item.price * totalQty
-                            ).toFixed(2)}</span>
                         </div>
                     </div>
                     `;
@@ -414,7 +421,7 @@ function renderCategorySectionForAdmin(categoryName, items) {
                                 <div style="margin-bottom: 20px; margin-left: 16px;">
                                     <div style="cursor: pointer;" onclick="toggleMenuSection('takeaway-available-${categoryName}')">
                                         <h5 style="font-size: 15px; font-weight: 700; color: #1e40af; margin-bottom: 12px; padding: 10px 16px; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 10px; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.1); border: 1px solid #93c5fd; transition: all 0.3s ease;" onmouseover="this.style.transform='translateX(3px)'; this.style.boxShadow='0 4px 8px rgba(30, 64, 175, 0.2)'" onmouseout="this.style.transform='translateX(0px)'; this.style.boxShadow='0 2px 4px rgba(30, 64, 175, 0.1)'">
-                                            📦 Takeaway Available (${
+                                            <span class="order-icon">📦</span> Takeaway Available (${
                                               inStockTakeawayAvailable.length
                                             })
                                             <span class="category-arrow" id="arrow-takeaway-available-${categoryName}" style="transform: rotate(-90deg); transition: transform 0.3s ease; font-size: 12px; color: #1e40af;">▼</span>
@@ -440,7 +447,7 @@ function renderCategorySectionForAdmin(categoryName, items) {
                                 <div style="margin-bottom: 20px; margin-left: 16px;">
                                     <div style="cursor: pointer;" onclick="toggleMenuSection('takeaway-not-available-${categoryName}')">
                                         <h5 style="font-size: 15px; font-weight: 700; color: #92400e; margin-bottom: 12px; padding: 10px 16px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 10px; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(146, 64, 14, 0.1); border: 1px solid #fbbf24; transition: all 0.3s ease;" onmouseover="this.style.transform='translateX(3px)'; this.style.boxShadow='0 4px 8px rgba(146, 64, 14, 0.2)'" onmouseout="this.style.transform='translateX(0px)'; this.style.boxShadow='0 2px 4px rgba(146, 64, 14, 0.1)'">
-                                            🍽️ Dine-in Only (${
+                                            <span class="order-icon">🍽️</span> Dine-in Only (${
                                               inStockTakeawayNotAvailable.length
                                             })
                                             <span class="category-arrow" id="arrow-takeaway-not-available-${categoryName}" style="transform: rotate(-90deg); transition: transform 0.3s ease; font-size: 12px; color: #92400e;">▼</span>
@@ -505,9 +512,7 @@ function renderMenuItemForAdmin(item) {
                     <h3 class="menu-name" style="margin-bottom: 4px; font-size: 18px;">${
                       item.emoji
                     } ${item.name}</h3>
-                    <span class="menu-price" style="font-size: 18px;">$${
-                      item.price
-                    }</span>
+                    <span class="menu-price">₹${item.price}</span>
                 </div>
                 <p class="menu-description" style="margin-bottom: 12px; font-size: 14px; line-height: 1.4;">${
                   item.description
@@ -616,6 +621,7 @@ async function addNewCategory() {
     alert("Category added successfully!");
     await loadDataFromSupabase();
     updateCategoryDropdown();
+    renderCategoryList();
   }
 }
 
@@ -776,14 +782,163 @@ function updateCategoryDropdown() {
   });
 }
 
-setInterval(async () => {
-  const { data, error } = await db
-    .from("orders")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (!error) {
-    renderAdminOrders(data);
+// Appearance Settings
+function changeFontSize(amount) {
+  const html = document.documentElement;
+  let currentSize = parseFloat(getComputedStyle(html).fontSize);
+  let newSize = currentSize + amount;
+  if (newSize >= 12 && newSize <= 24) {
+    // Set min and max font size
+    html.style.fontSize = `${newSize}px`;
+    localStorage.setItem("fontSize", newSize);
   }
-}, 10000); // every 10 seconds
+}
+
+function loadAppearanceSettings() {
+  const savedFontSize = localStorage.getItem("fontSize");
+  if (savedFontSize) {
+    document.documentElement.style.fontSize = `${savedFontSize}px`;
+  }
+
+  const savedRestaurantName = localStorage.getItem("restaurantName");
+  if (savedRestaurantName) {
+    document.querySelectorAll(".logo").forEach((logo) => {
+      logo.textContent = `🍽️ ${savedRestaurantName}`;
+    });
+    restaurantNameInput.value = savedRestaurantName;
+  }
+}
+
+function saveRestaurantName() {
+  const newName = restaurantNameInput.value.trim();
+  if (newName) {
+    localStorage.setItem("restaurantName", newName);
+    document.querySelectorAll(".logo").forEach((logo) => {
+      logo.textContent = `🍽️ ${newName} - Admin`;
+    });
+    alert("Restaurant name updated!");
+  }
+}
+
+increaseFontBtn.addEventListener("click", () => changeFontSize(1));
+decreaseFontBtn.addEventListener("click", () => changeFontSize(-1));
+saveRestaurantNameBtn.addEventListener("click", saveRestaurantName);
+
+// Real-time subscriptions
+db.channel("public:orders")
+  .on(
+    "postgres_changes",
+    { event: "*", schema: "public", table: "orders" },
+    (payload) => {
+      console.log("Change received!", payload);
+      renderAdminOrders();
+    }
+  )
+  .subscribe();
+
+db.channel("public:menu_items")
+  .on(
+    "postgres_changes",
+    { event: "*", schema: "public", table: "menu_items" },
+    async (payload) => {
+      console.log("Menu change received!", payload);
+      await loadDataFromSupabase();
+      if (currentView === "menuManagement") {
+        renderMenuItemsList();
+      }
+    }
+  )
+  .subscribe();
+
+db.channel("public:categories")
+  .on(
+    "postgres_changes",
+    { event: "*", schema: "public", table: "categories" },
+    async (payload) => {
+      console.log("Category change received!", payload);
+      await loadDataFromSupabase();
+      updateCategoryDropdown();
+      renderCategoryList();
+    }
+  )
+  .subscribe();
+
+// Category Management
+function renderCategoryList() {
+  const categoryList = document.getElementById("categoryList");
+  categoryList.innerHTML = "";
+  availableCategories.forEach((category) => {
+    const categoryItem = document.createElement("div");
+    categoryItem.className = "category-list-item";
+    categoryItem.innerHTML = `
+            <span>${category.name}</span>
+            <div>
+                <button class="btn btn-secondary" onclick="renameCategory(${category.id}, '${category.name}')">Rename</button>
+                <button class="btn btn-danger" onclick="deleteCategory(${category.id}, '${category.name}')">Delete</button>
+            </div>
+        `;
+    categoryList.appendChild(categoryItem);
+  });
+}
+
+async function renameCategory(categoryId, oldName) {
+  const newName = prompt(`Enter new name for category "${oldName}":`);
+  if (newName && newName.trim() !== "") {
+    const { error } = await db
+      .from("categories")
+      .update({ name: newName.trim() })
+      .eq("id", categoryId);
+    if (error) {
+      alert("Error renaming category: " + error.message);
+    } else {
+      // Also update all menu items with the old category name
+      const { error: updateError } = await db
+        .from("menu_items")
+        .update({ category: newName.trim() })
+        .eq("category", oldName);
+      if (updateError) {
+        alert("Error updating menu items: " + updateError.message);
+      } else {
+        alert("Category renamed successfully!");
+        await loadDataFromSupabase();
+        renderCategoryList();
+        renderMenuItemsList();
+      }
+    }
+  }
+}
+
+async function deleteCategory(categoryId, categoryName) {
+  const { data, error } = await db
+    .from("menu_items")
+    .select("id")
+    .eq("category", categoryName);
+  if (error) {
+    alert("Error checking for items in category: " + error.message);
+    return;
+  }
+  if (data.length > 0) {
+    alert(
+      `Cannot delete category "${categoryName}" because it still contains menu items. Please move or delete them first.`
+    );
+    return;
+  }
+
+  if (
+    confirm(`Are you sure you want to delete the category "${categoryName}"?`)
+  ) {
+    const { error: deleteError } = await db
+      .from("categories")
+      .delete()
+      .eq("id", categoryId);
+    if (deleteError) {
+      alert("Error deleting category: " + deleteError.message);
+    } else {
+      alert("Category deleted successfully!");
+      await loadDataFromSupabase();
+      renderCategoryList();
+    }
+  }
+}
 
 init();
