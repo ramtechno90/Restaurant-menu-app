@@ -10,6 +10,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // App State
 let menuItems = [];
 let availableCategories = [];
+let adminRestaurantId = null; // To store the admin's restaurant ID
 
 // DOM Elements
 const logoutBtn = document.getElementById("logoutBtn");
@@ -21,27 +22,28 @@ const adminLoginModal = document.getElementById("adminLoginModal");
 const adminLoginBtn = document.getElementById("adminLoginBtn");
 const addItemBtn = document.getElementById("addItemBtn");
 const cancelEditBtn = document.getElementById("cancelEditBtn");
-const increaseFontBtn = document.getElementById("increaseFont");
-const decreaseFontBtn = document.getElementById("decreaseFont");
-const saveRestaurantNameBtn = document.getElementById("saveRestaurantName");
+const saveRestaurantNameBtn = document.getElementById("saveRestaurantNameBtn");
 const restaurantNameInput = document.getElementById("restaurantNameInput");
 const hamburgerBtn = document.getElementById("hamburgerBtn");
 const navLinks = document.getElementById("navLinks");
 
 // Initialize App
 async function init() {
-  loadAppearanceSettings();
   await checkUserSession();
 }
 
 hamburgerBtn.addEventListener("click", (e) => {
-  e.stopPropagation(); // Prevent the click from immediately closing the menu
+  e.stopPropagation(); // Prevent the document click listener from firing immediately
   navLinks.classList.toggle("active");
 });
 
 // Close navbar when clicking outside of it
 document.addEventListener("click", (e) => {
-  if (!navLinks.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+  if (
+    navLinks.classList.contains("active") &&
+    !navLinks.contains(e.target) &&
+    !hamburgerBtn.contains(e.target)
+  ) {
     navLinks.classList.remove("active");
   }
 });
@@ -51,9 +53,30 @@ async function checkUserSession() {
     data: { session },
   } = await db.auth.getSession();
   if (session) {
+    // Find which restaurant this admin belongs to
+    const { data, error } = await db
+      .from("restaurant_users")
+      .select("restaurant_id")
+      .eq("user_id", session.user.id)
+      .single();
+
+    if (error || !data) {
+      alert("You are not assigned to a restaurant. Please contact support.");
+      await db.auth.signOut();
+      showLogin();
+      return;
+    }
+
+    adminRestaurantId = data.restaurant_id;
     showDashboard();
     await loadDataFromSupabase();
     await renderAdminOrders(); // Initial fetch
+    await loadRestaurantDetails();
+
+    // 🔁 Refresh orders every 10s
+    setInterval(async () => {
+      await renderAdminOrders();
+    }, 10000);
   } else {
     showLogin();
   }
@@ -151,6 +174,7 @@ async function renderAdminOrders(orders) {
     const { data, error } = await db
       .from("orders")
       .select("*")
+      .eq("restaurant_id", adminRestaurantId)
       .order("created_at", { ascending: false });
     if (error) {
       console.error("Error fetching orders:", error);
@@ -288,6 +312,12 @@ function getOrderActions(order) {
       return `
                 <div class="order-actions">
                     <button onclick="updateOrderStatus(${order.id}, 'Completed')" class="btn btn-success">Complete Order</button>
+                </div>
+            `;
+    case "Rejected":
+      return `
+                <div class="order-actions">
+                    <button onclick="updateOrderStatus(${order.id}, 'Pending')" class="btn btn-secondary">Restore Order</button>
                 </div>
             `;
     default:
@@ -592,7 +622,14 @@ async function addOrUpdateItem() {
     return;
   }
 
-  const itemData = { name, price, category, emoji, description };
+  const itemData = {
+    name,
+    price,
+    category,
+    emoji,
+    description,
+    restaurant_id: adminRestaurantId,
+  };
   let error;
 
   if (id) {
@@ -633,7 +670,9 @@ async function addNewCategory() {
     return;
   }
 
-  const { error } = await db.from("categories").insert({ name: categoryName });
+  const { error } = await db
+    .from("categories")
+    .insert({ name: categoryName, restaurant_id: adminRestaurantId });
 
   if (error) {
     alert("Error adding category: " + error.message);
@@ -732,6 +771,7 @@ document
 document
   .getElementById("clearRejectedBtn")
   .addEventListener("click", clearRejected);
+saveRestaurantNameBtn.addEventListener("click", saveRestaurantName);
 
 let expandedSections = new Set();
 
@@ -770,13 +810,15 @@ function applyExpandedState() {
 async function loadDataFromSupabase() {
   const { data: items, error: itemsError } = await db
     .from("menu_items")
-    .select("*");
+    .select("*")
+    .eq("restaurant_id", adminRestaurantId);
   if (itemsError) console.error("Error fetching menu items:", itemsError);
   else menuItems = items;
 
   const { data: categories, error: categoriesError } = await db
     .from("categories")
-    .select("*");
+    .select("*")
+    .eq("restaurant_id", adminRestaurantId);
   if (categoriesError) {
     console.error("Error fetching categories:", categoriesError);
   } else {
@@ -804,46 +846,43 @@ function updateCategoryDropdown() {
 }
 
 // Appearance Settings
-function changeFontSize(amount) {
-  const html = document.documentElement;
-  let currentSize = parseFloat(getComputedStyle(html).fontSize);
-  let newSize = currentSize + amount;
-  if (newSize >= 12 && newSize <= 24) {
-    // Set min and max font size
-    html.style.fontSize = `${newSize}px`;
-    localStorage.setItem("fontSize", newSize);
+async function loadRestaurantDetails() {
+  const { data, error } = await db
+    .from("restaurants")
+    .select("name")
+    .eq("id", adminRestaurantId)
+    .single();
+  if (error) {
+    console.error("Error fetching restaurant details:", error);
+  } else if (data) {
+    updateRestaurantName(data.name);
+    restaurantNameInput.value = data.name;
   }
 }
 
-function loadAppearanceSettings() {
-  const savedFontSize = localStorage.getItem("fontSize");
-  if (savedFontSize) {
-    document.documentElement.style.fontSize = `${savedFontSize}px`;
-  }
-
-  const savedRestaurantName = localStorage.getItem("restaurantName");
-  if (savedRestaurantName) {
+function updateRestaurantName(name) {
+  if (name) {
     document.querySelectorAll(".logo").forEach((logo) => {
-      logo.textContent = `🍽️ ${savedRestaurantName}`;
+      logo.textContent = `🍽️ ${name} - Admin`;
     });
-    restaurantNameInput.value = savedRestaurantName;
   }
 }
 
-function saveRestaurantName() {
+async function saveRestaurantName() {
   const newName = restaurantNameInput.value.trim();
-  if (newName) {
-    localStorage.setItem("restaurantName", newName);
-    document.querySelectorAll(".logo").forEach((logo) => {
-      logo.textContent = `🍽️ ${newName} - Admin`;
-    });
-    alert("Restaurant name updated!");
+  if (newName && adminRestaurantId) {
+    const { error } = await db
+      .from("restaurants")
+      .update({ name: newName })
+      .eq("id", adminRestaurantId);
+    if (error) {
+      alert("Error updating restaurant name: " + error.message);
+    } else {
+      updateRestaurantName(newName);
+      alert("Restaurant name updated successfully!");
+    }
   }
 }
-
-increaseFontBtn.addEventListener("click", () => changeFontSize(1));
-decreaseFontBtn.addEventListener("click", () => changeFontSize(-1));
-saveRestaurantNameBtn.addEventListener("click", saveRestaurantName);
 
 // Real-time subscriptions
 db.channel("public:orders")

@@ -18,6 +18,7 @@ let currentUser = "";
 let cart = [];
 let menuItems = [];
 let availableCategories = [];
+let restaurantId = null;
 
 // DOM Elements
 const customerView = document.getElementById("customerView");
@@ -36,15 +37,38 @@ const newOrderBtn = document.getElementById("newOrderBtn");
 const placeOrderBtn = document.getElementById("placeOrderBtn");
 const modifyOrderBtn = document.getElementById("modifyOrderBtn");
 const cancelOrderBtn = document.getElementById("cancelOrderBtn");
-const increaseFontBtn = document.getElementById("increaseFont");
-const decreaseFontBtn = document.getElementById("decreaseFont");
 
 // Initialize App
 async function init() {
-  loadAppearanceSettings();
+  const params = new URLSearchParams(window.location.search);
+  restaurantId = params.get("restaurant");
+  if (!restaurantId) {
+    document.body.innerHTML =
+      "<h1>Restaurant not specified. Please provide a restaurant ID in the URL (e.g., ?restaurant=1).</h1>";
+    return;
+  }
+
   await loadDataFromSupabase();
   renderMenu();
   updateCartUI();
+
+  // Real-time subscription for restaurant name changes
+  db.channel(`public:restaurants:id=eq.${restaurantId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "restaurants",
+        filter: `id=eq.${restaurantId}`,
+      },
+      (payload) => {
+        if (payload.new && payload.new.name) {
+          updateRestaurantName(payload.new.name);
+        }
+      }
+    )
+    .subscribe();
 }
 
 // Navigation
@@ -106,6 +130,11 @@ customerName.addEventListener("keypress", (e) => {
   }
 });
 
+// Helper function to create safe IDs from category names
+function sanitizeForId(text) {
+  return text.replace(/[^a-zA-Z0-9]/g, "-");
+}
+
 // Menu Rendering
 function renderMenu() {
   const menuContainer = document.getElementById("menuContainer");
@@ -122,27 +151,28 @@ function renderMenu() {
   const categoryOrder = availableCategories.map((c) => c.name);
 
   categoryOrder.forEach((categoryName) => {
+    const sanitizedCategoryName = sanitizeForId(categoryName);
     if (categories[categoryName]) {
       const categorySection = document.createElement("div");
       categorySection.className = "category-section";
       categorySection.innerHTML = `
-                <div class="category-header" onclick="toggleCategory('${categoryName}')">
+                <div class="category-header" onclick="toggleCategory('${sanitizedCategoryName}')">
                     <div class="category-title">
                         <span>${categoryName}</span>
                         <div class="category-info">
                             <span class="item-count">${categories[categoryName].length} items</span>
-                            <span class="category-arrow" id="arrow-${categoryName}" style="transform: rotate(-90deg);">▼</span>
+                            <span class="category-arrow" id="arrow-${sanitizedCategoryName}" style="transform: rotate(-90deg);">▼</span>
                         </div>
                     </div>
                 </div>
-                <div class="category-content category-collapsed" id="content-${categoryName}">
-                    <div class="menu-grid" id="category-${categoryName}"></div>
+                <div class="category-content category-collapsed" id="content-${sanitizedCategoryName}">
+                    <div class="menu-grid" id="category-${sanitizedCategoryName}"></div>
                 </div>
             `;
       menuContainer.appendChild(categorySection);
 
       const categoryGrid = categorySection.querySelector(
-        `#category-${categoryName}`
+        `#category-${sanitizedCategoryName}`
       );
       categories[categoryName].forEach((item) => {
         const menuCard = document.createElement("div");
@@ -175,9 +205,9 @@ function renderMenu() {
   });
 }
 
-window.toggleCategory = function (categoryName) {
-  const content = document.getElementById(`content-${categoryName}`);
-  const arrow = document.getElementById(`arrow-${categoryName}`);
+window.toggleCategory = function (sanitizedCategoryName) {
+  const content = document.getElementById(`content-${sanitizedCategoryName}`);
+  const arrow = document.getElementById(`arrow-${sanitizedCategoryName}`);
 
   if (content.classList.contains("category-expanded")) {
     content.classList.remove("category-expanded");
@@ -530,8 +560,10 @@ async function placeOrder() {
   placeOrderBtn.disabled = true;
   placeOrderBtn.textContent = "Placing Order...";
 
+  // Call the RPC function with the restaurantId to get a restaurant-specific order number
   const { data: nextNumber, error: rpcError } = await anonDb.rpc(
-    "get_next_daily_order_number"
+    "get_next_daily_order_number",
+    { rest_id: restaurantId }
   );
 
   if (rpcError) {
@@ -550,9 +582,8 @@ async function placeOrder() {
       items: cart,
       status: "Pending",
       daily_order_number: nextNumber,
-    })
-    .select()
-    .single();
+      restaurant_id: restaurantId,
+    });
 
   if (insertError) {
     console.error("Insert error:", insertError);
@@ -578,15 +609,29 @@ async function placeOrder() {
 }
 
 async function loadDataFromSupabase() {
+  // Use the secure RPC function to get the restaurant name
+  const { data: restaurantData, error: restaurantError } = await anonDb.rpc(
+    "get_restaurant_name",
+    { rest_id: restaurantId }
+  );
+
+  if (restaurantError) {
+    console.error("Error fetching restaurant name:", restaurantError);
+  } else if (restaurantData && restaurantData.length > 0) {
+    updateRestaurantName(restaurantData[0].name);
+  }
+
   const { data: items, error: itemsError } = await db
     .from("menu_items")
-    .select("*");
+    .select("*")
+    .eq("restaurant_id", restaurantId);
   if (itemsError) console.error("Error fetching menu items:", itemsError);
   else menuItems = items;
 
   const { data: categories, error: categoriesError } = await db
     .from("categories")
-    .select("*");
+    .select("*")
+    .eq("restaurant_id", restaurantId);
   if (categoriesError) {
     console.error("Error fetching categories:", categoriesError);
   } else {
@@ -594,35 +639,16 @@ async function loadDataFromSupabase() {
   }
 
   renderMenu();
+  updateCartUI();
 }
 
 // Appearance Settings
-function changeFontSize(amount) {
-  const html = document.documentElement;
-  let currentSize = parseFloat(getComputedStyle(html).fontSize);
-  let newSize = currentSize + amount;
-  if (newSize >= 12 && newSize <= 24) {
-    // Set min and max font size
-    html.style.fontSize = `${newSize}px`;
-    localStorage.setItem("fontSize", newSize);
-  }
-}
-
-function loadAppearanceSettings() {
-  const savedFontSize = localStorage.getItem("fontSize");
-  if (savedFontSize) {
-    document.documentElement.style.fontSize = `${savedFontSize}px`;
-  }
-
-  const savedRestaurantName = localStorage.getItem("restaurantName");
-  if (savedRestaurantName) {
+function updateRestaurantName(name) {
+  if (name) {
     document.querySelectorAll(".logo").forEach((logo) => {
-      logo.textContent = `🍽️ ${savedRestaurantName}`;
+      logo.textContent = `🍽️ ${name}`;
     });
   }
 }
-
-increaseFontBtn.addEventListener("click", () => changeFontSize(1));
-decreaseFontBtn.addEventListener("click", () => changeFontSize(-1));
 
 init();
