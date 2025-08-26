@@ -896,6 +896,14 @@ nav {
     margin-bottom: 24px;
 }
 
+.restaurant-settings .category-header,
+.category-management .category-header,
+.item-management .category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .category-management-list {
     display: flex;
     flex-direction: column;

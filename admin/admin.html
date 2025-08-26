@@ -128,40 +128,66 @@
 
             <!-- Restaurant Settings Section -->
             <div class="management-section restaurant-settings">
-                <h3>Restaurant Settings</h3>
-                <div style="display: flex; gap: 12px; align-items: center;">
-                    <input type="text" id="restaurantNameInput" placeholder="Your restaurant name" class="form-input" style="flex: 1; margin-bottom: 0;">
-                    <button id="saveRestaurantNameBtn" class="btn btn-primary">Save Name</button>
+                <div class="category-header" onclick="toggleManagementSection('restaurantSettings')">
+                    <h3>Restaurant Settings</h3>
+                    <span class="category-arrow" id="restaurantSettingsArrow" style="transform: rotate(-90deg);">▼</span>
+                </div>
+                <div id="restaurantSettingsContent" class="category-content category-collapsed">
+                    <div style="display: flex; gap: 12px; align-items: center; margin-top: 16px;">
+                        <input type="text" id="restaurantNameInput" placeholder="Your restaurant name" class="form-input" style="flex: 1; margin-bottom: 0;">
+                        <button id="saveRestaurantNameBtn" class="btn btn-primary">Save Name</button>
+                    </div>
                 </div>
             </div>
 
             <div class="management-section category-management">
-                <h3>Category Management</h3>
-                <div id="categoryList" class="category-management-list">
-                    <!-- Categories will be populated here -->
+                <div class="category-header" onclick="toggleManagementSection('categoryManagement')">
+                    <h3>Category Management</h3>
+                    <span class="category-arrow" id="categoryManagementArrow" style="transform: rotate(-90deg);">▼</span>
                 </div>
-                 <div>
-                    <h3 style="margin-bottom: 16px;">Add New Category</h3>
-                    <div style="display: flex; gap: 12px;">
-                        <input type="text" id="newCategoryName" placeholder="Category name" class="form-input">
-                        <button id="addNewCategory" class="btn btn-success">Add Category</button>
+                <div id="categoryManagementContent" class="category-content category-collapsed">
+                    <div id="categoryList" class="category-management-list">
+                        <!-- Categories will be populated here -->
+                    </div>
+                     <div>
+                        <h3 style="margin-bottom: 16px;">Add New Category</h3>
+                        <div style="display: flex; gap: 12px;">
+                            <input type="text" id="newCategoryName" placeholder="Category name" class="form-input">
+                            <button id="addNewCategory" class="btn btn-success">Add Category</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="management-section item-management">
-                 <h3 style="margin-bottom: 16px;" id="formTitle">Add New Item</h3>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <input type="hidden" id="editItemId">
-                    <input type="text" id="newItemName" placeholder="Item name" class="form-input">
-                    <input type="number" id="newItemPrice" placeholder="Price" step="0.01" class="form-input">
-                    <select id="newItemCategory" class="form-input">
-                        <option value="">Select category</option>
-                    </select>
-                    <input type="text" id="newItemEmoji" placeholder="Emoji (optional, e.g., 🍔)" class="form-input">
-                    <textarea id="newItemDescription" placeholder="Description" class="form-input" rows="3"></textarea>
-                    <button id="addItemBtn" class="btn btn-success">Add Item</button>
-                    <button id="cancelEditBtn" class="btn btn-secondary hidden">Cancel Edit</button>
+                <div class="category-header" onclick="toggleManagementSection('addItem')">
+                    <h3 id="formTitle">Add New Item</h3>
+                    <span class="category-arrow" id="addItemArrow" style="transform: rotate(-90deg);">▼</span>
+                </div>
+                <div id="addItemContent" class="category-content category-collapsed">
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+                        <input type="hidden" id="editItemId">
+                        <div>
+                            <label for="newItemName">Item Name <span style="color: red;">*</span></label>
+                            <input type="text" id="newItemName" placeholder="Item name" class="form-input">
+                        </div>
+                        <div>
+                            <label for="newItemPrice">Price <span style="color: red;">*</span></label>
+                            <input type="number" id="newItemPrice" placeholder="Price" step="0.01" class="form-input">
+                        </div>
+                        <div>
+                            <label for="newItemCategory">Category <span style="color: red;">*</span></label>
+                            <select id="newItemCategory" class="form-input">
+                                <option value="">Select category</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="newItemDescription">Description (optional)</label>
+                            <textarea id="newItemDescription" placeholder="Description" class="form-input" rows="3"></textarea>
+                        </div>
+                        <button id="addItemBtn" class="btn btn-success">Add Item</button>
+                        <button id="cancelEditBtn" class="btn btn-secondary hidden">Cancel Edit</button>
+                    </div>
                 </div>
             </div>
             

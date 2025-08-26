@@ -561,8 +561,8 @@ function renderMenuItemForAdmin(item) {
             <div class="menu-card-content" style="padding: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
                     <h3 class="menu-name" style="margin-bottom: 4px; font-size: 18px;">${
-                      item.emoji
-                    } ${item.name}</h3>
+                      item.name
+                    }</h3>
                     <span class="menu-price">₹${item.price}</span>
                 </div>
                 <p class="menu-description" style="margin-bottom: 12px; font-size: 14px; line-height: 1.4;">${
@@ -609,16 +609,13 @@ async function addOrUpdateItem() {
   const name = document.getElementById("newItemName").value.trim();
   const price = parseFloat(document.getElementById("newItemPrice").value);
   const category = document.getElementById("newItemCategory").value;
-  const emoji = document.getElementById("newItemEmoji").value.trim() || "🍽️";
   const description = document
     .getElementById("newItemDescription")
     .value.trim();
   const id = document.getElementById("editItemId").value;
 
-  if (!name || !price || !category || !description) {
-    alert(
-      "Please fill in all required fields (name, price, category, description)"
-    );
+  if (!name || !price || !category) {
+    alert("Please fill in all required fields (name, price, category)");
     return;
   }
 
@@ -626,7 +623,6 @@ async function addOrUpdateItem() {
     name,
     price,
     category,
-    emoji,
     description,
     restaurant_id: adminRestaurantId,
   };
@@ -661,7 +657,6 @@ async function addNewCategory() {
   const categoryName = document.getElementById("newCategoryName").value.trim();
 
   if (!categoryName) {
-    alert("Please enter a category name");
     return;
   }
 
@@ -678,7 +673,6 @@ async function addNewCategory() {
     alert("Error adding category: " + error.message);
   } else {
     document.getElementById("newCategoryName").value = "";
-    alert("Category added successfully!");
     await loadDataFromSupabase();
     updateCategoryDropdown();
     renderCategoryList();
@@ -691,7 +685,6 @@ window.deleteMenuItem = async function (itemId) {
     if (error) {
       alert("Error deleting item: " + error.message);
     } else {
-      alert("Item deleted successfully!");
       await loadDataFromSupabase();
       renderMenuItemsList();
     }
@@ -706,11 +699,19 @@ window.editMenuItem = function (itemId) {
     document.getElementById("newItemName").value = item.name;
     document.getElementById("newItemPrice").value = item.price;
     document.getElementById("newItemCategory").value = item.category;
-    document.getElementById("newItemEmoji").value = item.emoji;
     document.getElementById("newItemDescription").value = item.description;
 
     addItemBtn.textContent = "Update Item";
     cancelEditBtn.classList.remove("hidden");
+
+    // Collapse other sections and expand the add item section
+    setManagementSectionOpen("addItem", true);
+    setManagementSectionOpen("categoryManagement", false);
+    setManagementSectionOpen("restaurantSettings", false);
+
+    document
+      .getElementById("newItemName")
+      .scrollIntoView({ behavior: "smooth", block: "center" });
   }
 };
 
@@ -720,7 +721,6 @@ function resetItemForm() {
   document.getElementById("newItemName").value = "";
   document.getElementById("newItemPrice").value = "";
   document.getElementById("newItemCategory").value = "";
-  document.getElementById("newItemEmoji").value = "";
   document.getElementById("newItemDescription").value = "";
 
   addItemBtn.textContent = "Add Item";
@@ -941,6 +941,32 @@ function renderCategoryList() {
   });
 }
 
+function toggleManagementSection(sectionId) {
+  const content = document.getElementById(`${sectionId}Content`);
+  const arrow = document.getElementById(`${sectionId}Arrow`);
+  content.classList.toggle("category-collapsed");
+  content.classList.toggle("category-expanded");
+  if (content.classList.contains("category-expanded")) {
+    arrow.style.transform = "rotate(0deg)";
+  } else {
+    arrow.style.transform = "rotate(-90deg)";
+  }
+}
+
+function setManagementSectionOpen(sectionId, isOpen) {
+  const content = document.getElementById(`${sectionId}Content`);
+  const arrow = document.getElementById(`${sectionId}Arrow`);
+  if (isOpen) {
+    content.classList.add("category-expanded");
+    content.classList.remove("category-collapsed");
+    arrow.style.transform = "rotate(0deg)";
+  } else {
+    content.classList.remove("category-expanded");
+    content.classList.add("category-collapsed");
+    arrow.style.transform = "rotate(-90deg)";
+  }
+}
+
 async function renameCategory(categoryId, oldName) {
   const newName = prompt(`Enter new name for category "${oldName}":`);
   if (newName && newName.trim() !== "") {
@@ -959,7 +985,6 @@ async function renameCategory(categoryId, oldName) {
       if (updateError) {
         alert("Error updating menu items: " + updateError.message);
       } else {
-        alert("Category renamed successfully!");
         await loadDataFromSupabase();
         renderCategoryList();
         renderMenuItemsList();
@@ -972,31 +997,46 @@ async function deleteCategory(categoryId, categoryName) {
   const { data, error } = await db
     .from("menu_items")
     .select("id")
-    .eq("category", categoryName);
+    .eq("category", categoryName)
+    .eq("restaurant_id", adminRestaurantId);
+
   if (error) {
     alert("Error checking for items in category: " + error.message);
     return;
   }
+
+  let confirmationMessage = `Are you sure you want to delete the category "${categoryName}"?`;
   if (data.length > 0) {
-    alert(
-      `Cannot delete category "${categoryName}" because it still contains menu items. Please move or delete them first.`
-    );
-    return;
+    confirmationMessage += ` This will also delete all ${data.length} menu item(s) within it.`;
   }
 
-  if (
-    confirm(`Are you sure you want to delete the category "${categoryName}"?`)
-  ) {
-    const { error: deleteError } = await db
+  if (confirm(confirmationMessage)) {
+    // If there are items, delete them first
+    if (data.length > 0) {
+      const { error: deleteItemsError } = await db
+        .from("menu_items")
+        .delete()
+        .eq("category", categoryName)
+        .eq("restaurant_id", adminRestaurantId);
+
+      if (deleteItemsError) {
+        alert("Error deleting menu items: " + deleteItemsError.message);
+        return; // Stop if items can't be deleted
+      }
+    }
+
+    // Now, delete the category
+    const { error: deleteCategoryError } = await db
       .from("categories")
       .delete()
       .eq("id", categoryId);
-    if (deleteError) {
-      alert("Error deleting category: " + deleteError.message);
+
+    if (deleteCategoryError) {
+      alert("Error deleting category: " + deleteCategoryError.message);
     } else {
-      alert("Category deleted successfully!");
       await loadDataFromSupabase();
       renderCategoryList();
+      renderMenuItemsList();
     }
   }
 }
