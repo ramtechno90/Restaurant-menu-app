@@ -237,6 +237,20 @@ nav {
     font-size: 1.125rem;
 }
 
+/* Logo specific styles */
+.logo-img-nav {
+    height: 32px; /* Small for navbar */
+    border-radius: 6px;
+    vertical-align: middle;
+}
+
+.logo-img-main {
+    height: 80px; /* Large for main content */
+    border-radius: 12px;
+    display: block;
+    margin: 0 auto 16px;
+}
+
 .parcel-charge-note {
     font-style: italic;
     color: #4b5563;
