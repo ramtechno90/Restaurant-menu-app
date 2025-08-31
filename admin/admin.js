@@ -24,6 +24,10 @@ const addItemBtn = document.getElementById("addItemBtn");
 const cancelEditBtn = document.getElementById("cancelEditBtn");
 const saveRestaurantNameBtn = document.getElementById("saveRestaurantNameBtn");
 const restaurantNameInput = document.getElementById("restaurantNameInput");
+const logoInput = document.getElementById("logoInput");
+const saveLogoBtn = document.getElementById("saveLogoBtn");
+const logoPreview = document.getElementById("logoPreview");
+const saveDisplayPrefBtn = document.getElementById("saveDisplayPrefBtn");
 const universalParcelChargeInput = document.getElementById(
   "universalParcelChargeInput"
 );
@@ -900,7 +904,7 @@ function updateCategoryDropdown() {
 async function loadRestaurantDetails() {
   const { data, error } = await db
     .from("restaurants")
-    .select("name, universal_parcel_charge")
+    .select("name, universal_parcel_charge, logo_url, display_preference")
     .eq("id", adminRestaurantId)
     .single();
   if (error) {
@@ -908,21 +912,105 @@ async function loadRestaurantDetails() {
   } else if (data) {
     restaurantNameInput.value = data.name;
     universalParcelChargeInput.value = data.universal_parcel_charge || 0;
-    updateRestaurantName(data.name);
+    updateRestaurantName(data.name, data.logo_url, data.display_preference);
+    if (data.logo_url) {
+      logoPreview.src = data.logo_url;
+      logoPreview.style.display = "block";
+    }
+    if (data.display_preference === 'logo_only') {
+        document.getElementById('prefLogoOnly').checked = true;
+    } else if (data.display_preference === 'name_only') {
+        document.getElementById('prefNameOnly').checked = true;
+    } else {
+        document.getElementById('prefLogoAndName').checked = true;
+    }
   }
 }
 
-function updateRestaurantName(name) {
-  if (name) {
+function updateRestaurantName(name, logoUrl, displayPreference) {
     document.querySelectorAll(".logo").forEach((logo) => {
-      logo.textContent = `🍽️ ${name} - Admin`;
+        let html = '';
+        const isNav = logo.closest('.nav-content');
+        const wantsLogo = displayPreference !== 'name_only' && logoUrl;
+        const wantsName = displayPreference !== 'logo_only';
+
+        if (wantsLogo) {
+            const logoClass = isNav ? 'logo-img-nav' : 'logo-img-main';
+            html += `<img src="${logoUrl}" alt="${name || 'Logo'}" class="${logoClass}">`;
+        }
+
+        if (wantsName) {
+            if (!wantsLogo) { // If there's no logo to show, use emoji
+                html += '🍽️';
+            }
+            html += ` ${name || 'Restaurant'}`;
+        }
+
+        if (isNav) {
+            html += ' - Admin';
+        }
+
+        logo.innerHTML = html;
     });
-  }
 }
+
+saveLogoBtn.addEventListener("click", async () => {
+  const file = logoInput.files[0];
+  if (!file) {
+    alert("Please select a logo to upload.");
+    return;
+  }
+
+  const fileName = `${adminRestaurantId}/${Date.now()}-${file.name}`;
+
+  const { error: uploadError } = await db.storage
+    .from("logos")
+    .upload(fileName, file);
+
+  if (uploadError) {
+    alert("Error uploading logo: " + uploadError.message);
+    return;
+  }
+
+  const {
+    data: { publicUrl },
+  } = db.storage.from("logos").getPublicUrl(fileName);
+
+  const { error: updateError } = await db
+    .from("restaurants")
+    .update({ logo_url: publicUrl })
+    .eq("id", adminRestaurantId);
+
+  if (updateError) {
+    alert("Error saving logo URL: " + updateError.message);
+  } else {
+    alert("Logo updated successfully!");
+    loadRestaurantDetails();
+  }
+});
+
+saveDisplayPrefBtn.addEventListener("click", async () => {
+    const preference = document.querySelector('input[name="displayPref"]:checked').value;
+    const { error } = await db
+        .from("restaurants")
+        .update({ display_preference: preference })
+        .eq("id", adminRestaurantId);
+
+    if (error) {
+        alert("Error saving preference: " + error.message);
+    } else {
+        alert("Display preference updated successfully!");
+        loadRestaurantDetails();
+    }
+});
 
 saveRestaurantNameBtn.addEventListener("click", async () => {
   const newName = restaurantNameInput.value.trim();
-  if (newName && adminRestaurantId) {
+  if (!newName) {
+    alert("Restaurant name cannot be empty.");
+    return;
+  }
+  if (adminRestaurantId) {
     const { error } = await db
       .from("restaurants")
       .update({ name: newName })
@@ -930,7 +1018,7 @@ saveRestaurantNameBtn.addEventListener("click", async () => {
     if (error) {
       alert("Error updating restaurant name: " + error.message);
     } else {
-      updateRestaurantName(newName);
+      loadRestaurantDetails();
       alert("Restaurant name updated successfully!");
     }
   }
