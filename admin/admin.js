@@ -24,6 +24,12 @@ const addItemBtn = document.getElementById("addItemBtn");
 const cancelEditBtn = document.getElementById("cancelEditBtn");
 const saveRestaurantNameBtn = document.getElementById("saveRestaurantNameBtn");
 const restaurantNameInput = document.getElementById("restaurantNameInput");
+const universalParcelChargeInput = document.getElementById(
+  "universalParcelChargeInput"
+);
+const saveUniversalParcelChargeBtn = document.getElementById(
+  "saveUniversalParcelChargeBtn"
+);
 const hamburgerBtn = document.getElementById("hamburgerBtn");
 const navLinks = document.getElementById("navLinks");
 const newItemNameInput = document.getElementById("newItemName");
@@ -571,6 +577,9 @@ function renderMenuItemForAdmin(item) {
                     }</h3>
                     <span class="menu-price">₹${item.price}</span>
                 </div>
+                 <p class="menu-description" style="margin-bottom: 4px; font-size: 14px; color: #1e40af;">Parcel Charge: ₹${
+                   item.parcel_charge || 0
+                 }</p>
                 <p class="menu-description" style="margin-bottom: 12px; font-size: 14px; line-height: 1.4;">${
                   item.description
                 }</p>
@@ -614,6 +623,8 @@ function renderMenuItemForAdmin(item) {
 async function addOrUpdateItem() {
   const name = document.getElementById("newItemName").value.trim();
   const price = parseFloat(document.getElementById("newItemPrice").value);
+  const parcelCharge =
+    parseFloat(document.getElementById("newItemParcelCharge").value) || 0;
   const category = document.getElementById("newItemCategory").value;
   const description = document
     .getElementById("newItemDescription")
@@ -628,6 +639,7 @@ async function addOrUpdateItem() {
   const itemData = {
     name,
     price,
+    parcel_charge: parcelCharge,
     category,
     description,
     restaurant_id: adminRestaurantId,
@@ -710,6 +722,8 @@ window.editMenuItem = function (itemId) {
     document.getElementById("editItemId").value = item.id;
     document.getElementById("newItemName").value = item.name;
     document.getElementById("newItemPrice").value = item.price;
+    document.getElementById("newItemParcelCharge").value =
+      item.parcel_charge || 0;
     document.getElementById("newItemCategory").value = item.category;
     document.getElementById("newItemDescription").value = item.description;
 
@@ -730,6 +744,7 @@ function resetItemForm() {
   document.getElementById("editItemId").value = "";
   document.getElementById("newItemName").value = "";
   document.getElementById("newItemPrice").value = "";
+  document.getElementById("newItemParcelCharge").value = "";
   document.getElementById("newItemCategory").value = "";
   document.getElementById("newItemDescription").value = "";
 
@@ -885,13 +900,14 @@ function updateCategoryDropdown() {
 async function loadRestaurantDetails() {
   const { data, error } = await db
     .from("restaurants")
-    .select("name")
+    .select("name, universal_parcel_charge")
     .eq("id", adminRestaurantId)
     .single();
   if (error) {
     console.error("Error fetching restaurant details:", error);
   } else if (data) {
     restaurantNameInput.value = data.name;
+    universalParcelChargeInput.value = data.universal_parcel_charge || 0;
     updateRestaurantName(data.name);
   }
 }
@@ -916,6 +932,21 @@ saveRestaurantNameBtn.addEventListener("click", async () => {
     } else {
       updateRestaurantName(newName);
       alert("Restaurant name updated successfully!");
+    }
+  }
+});
+
+saveUniversalParcelChargeBtn.addEventListener("click", async () => {
+  const newCharge = parseFloat(universalParcelChargeInput.value) || 0;
+  if (adminRestaurantId) {
+    const { error } = await db
+      .from("restaurants")
+      .update({ universal_parcel_charge: newCharge })
+      .eq("id", adminRestaurantId);
+    if (error) {
+      alert("Error updating parcel charge: " + error.message);
+    } else {
+      alert("Default parcel charge updated successfully!");
     }
   }
 });

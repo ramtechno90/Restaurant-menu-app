@@ -237,6 +237,12 @@ nav {
     font-size: 1.125rem;
 }
 
+.parcel-charge-note {
+    font-style: italic;
+    color: #4b5563;
+    margin-top: 8px;
+}
+
 .customer-greeting {
     margin-top: 16px;
     font-size: 1.125rem;
@@ -298,12 +304,17 @@ nav {
 .category-collapsed {
     max-height: 0;
     opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 .category-expanded {
-    max-height: 2000px;
+    max-height: 2000px; /* Adjust as needed */
     opacity: 1;
 }
+
 
 /* Menu Grid */
 .menu-grid {
@@ -586,12 +597,21 @@ nav {
 }
 
 .cart-total-row {
+    margin-bottom: 16px;
+}
+
+.cart-total-breakdown div {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    font-size: 1.25rem;
+    padding: 4px 0;
+}
+
+.cart-total-breakdown .grand-total {
     font-weight: bold;
-    margin-bottom: 16px;
+    font-size: 1.25rem;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 8px;
+    padding-top: 8px;
 }
 
 /* Fixed Cart Button */
@@ -624,6 +644,12 @@ nav {
     padding: 4px 8px;
     border-radius: 20px;
     font-size: 0.875rem;
+}
+
+.parcel-charge-info {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #4b5563;
 }
 
 /* Invoice Section */
@@ -699,7 +725,6 @@ nav {
 }
 
 .invoice-total {
-    border-top: 1px solid #e5e7eb;
     padding-top: 16px;
 }
 
@@ -887,13 +912,19 @@ nav {
 }
 
 .management-section {
-    margin-bottom: 48px;
+    margin-bottom: 24px;
     padding-bottom: 24px;
     border-bottom: 1px solid #e5e7eb;
 }
 
+.management-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
 .restaurant-settings, .category-management, .item-management {
-    margin-bottom: 24px;
+    margin-bottom: 0;
 }
 
 .restaurant-settings .category-header,
@@ -902,6 +933,7 @@ nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 0;
 }
 
 .category-management-list {
@@ -1657,3 +1689,4 @@ nav {
         opacity: 1;
     }
 }
+

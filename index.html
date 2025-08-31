@@ -39,6 +39,7 @@
             <div class="menu-header">
                 <h1 class="logo">Our Menu</h1>
                 <p>Delicious food made with love</p>
+                <p id="parcelChargeNote" class="parcel-charge-note"></p>
                 <div id="customerGreeting" class="customer-greeting"></div>
             </div>
 
@@ -67,9 +68,8 @@
                 </div>
                 
                 <div class="cart-total">
-                    <div class="cart-total-row">
-                        <span>Total:</span>
-                        <span id="cartTotalAmount">₹0.00</span>
+                    <div class="cart-total-row" id="cartTotalAmount">
+                        <!-- Cart total breakdown will be populated here -->
                     </div>
                     <button id="proceedToCheckout" class="btn btn-success" style="width: 100%;" disabled>
                         Proceed to Checkout
@@ -116,3 +116,4 @@
     <script src="customer.js"></script>
 </body>
 </html>
+

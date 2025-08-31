@@ -19,6 +19,7 @@ let cart = [];
 let menuItems = [];
 let availableCategories = [];
 let restaurantId = null;
+let universalParcelCharge = 0;
 
 // DOM Elements
 const customerView = document.getElementById("customerView");
@@ -291,18 +292,41 @@ function updateCartUI() {
     (sum, item) => sum + (item.dineInQty + item.takeawayQty),
     0
   );
-  const totalAmount = cart.reduce(
+
+  const subtotal = cart.reduce(
     (sum, item) => sum + item.price * (item.dineInQty + item.takeawayQty),
     0
   );
 
+  const totalParcelCharge = cart.reduce((sum, item) => {
+    const charge =
+      item.parcel_charge > 0 ? item.parcel_charge : universalParcelCharge;
+    return sum + charge * item.takeawayQty;
+  }, 0);
+
+  const grandTotal = subtotal + totalParcelCharge;
+
   cartCount.textContent = totalItems;
-  document.getElementById("cartTotal").textContent = `₹${totalAmount.toFixed(
+  document.getElementById("cartTotal").textContent = `₹${grandTotal.toFixed(
     2
   )}`;
-  document.getElementById(
-    "cartTotalAmount"
-  ).textContent = `₹${totalAmount.toFixed(2)}`;
+
+  const cartTotalAmountContainer = document.getElementById("cartTotalAmount");
+  cartTotalAmountContainer.innerHTML = `
+      <div class="cart-total-breakdown">
+          <div><span>Subtotal:</span> <span>₹${subtotal.toFixed(2)}</span></div>
+          ${
+            totalParcelCharge > 0
+              ? `<div><span>Parcel Charges:</span> <span>₹${totalParcelCharge.toFixed(
+                  2
+                )}</span></div>`
+              : ""
+          }
+          <div class="grand-total"><span>Total:</span> <span>₹${grandTotal.toFixed(
+            2
+          )}</span></div>
+      </div>
+  `;
 
   proceedToCheckout.disabled = cart.length === 0;
 
@@ -325,6 +349,13 @@ function renderCart() {
   cartItemsContainer.innerHTML = cart
     .map((item) => {
       const totalQty = item.dineInQty + item.takeawayQty;
+      const applicableParcelCharge =
+        item.parcel_charge > 0 ? item.parcel_charge : universalParcelCharge;
+      const parcelChargeInfo =
+        applicableParcelCharge > 0
+          ? `<span class="parcel-charge-info">(+₹${applicableParcelCharge}/item)</span>`
+          : "";
+
       return `
         <div class="cart-item">
             <div class="cart-item-header">
@@ -387,11 +418,9 @@ function renderCart() {
                                 : ""
                             }">
                                 <span style="display: flex; align-items: center; gap: 8px; font-weight: 500;">
-                                    <span class="order-icon">📦</span> Takeaway ${
-                                      !item.takeaway_available
-                                        ? "(Not Available)"
-                                        : ""
-                                    }
+                                    <span class="order-icon">📦</span> Takeaway ${parcelChargeInfo} ${
+        !item.takeaway_available ? "(Not Available)" : ""
+      }
                                 </span>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <button onclick="updateDiningQuantity('${
@@ -452,10 +481,17 @@ function renderCart() {
 
 // Invoice Generation
 function renderInvoicePreview() {
-  const totalAmount = cart.reduce(
+  const subtotal = cart.reduce(
     (sum, item) => sum + item.price * (item.dineInQty + item.takeawayQty),
     0
   );
+  const totalParcelCharge = cart.reduce((sum, item) => {
+    const charge =
+      item.parcel_charge > 0 ? item.parcel_charge : universalParcelCharge;
+    return sum + charge * item.takeawayQty;
+  }, 0);
+  const grandTotal = subtotal + totalParcelCharge;
+
   const invoiceContent = document.getElementById("invoiceContent");
 
   document.getElementById("placeOrderBtn").classList.remove("hidden");
@@ -519,11 +555,20 @@ function renderInvoicePreview() {
         </div>
         
         <div class="invoice-total">
-            <div class="invoice-total-row">
-                <span>Total Amount:</span>
-                <span class="invoice-total-amount">₹${totalAmount.toFixed(
+            <div class="cart-total-breakdown">
+                <div><span>Subtotal:</span> <span>₹${subtotal.toFixed(
                   2
-                )}</span>
+                )}</span></div>
+                ${
+                  totalParcelCharge > 0
+                    ? `<div><span>Parcel Charges:</span> <span>₹${totalParcelCharge.toFixed(
+                        2
+                      )}</span></div>`
+                    : ""
+                }
+                <div class="grand-total"><span>Total:</span> <span class="invoice-total-amount">₹${grandTotal.toFixed(
+                  2
+                )}</span></div>
             </div>
         </div>
         
@@ -534,10 +579,16 @@ function renderInvoicePreview() {
 }
 
 async function placeOrder() {
-  const totalAmount = cart.reduce(
+  const subtotal = cart.reduce(
     (sum, item) => sum + item.price * (item.dineInQty + item.takeawayQty),
     0
   );
+  const totalParcelCharge = cart.reduce((sum, item) => {
+    const charge =
+      item.parcel_charge > 0 ? item.parcel_charge : universalParcelCharge;
+    return sum + charge * item.takeawayQty;
+  }, 0);
+  const grandTotal = subtotal + totalParcelCharge;
 
   placeOrderBtn.disabled = true;
   placeOrderBtn.textContent = "Placing Order...";
@@ -559,7 +610,7 @@ async function placeOrder() {
     .from("orders")
     .insert({
       customer_name: currentUser,
-      total: totalAmount,
+      total: grandTotal,
       items: cart,
       status: "Pending",
       daily_order_number: nextNumber,
@@ -590,14 +641,16 @@ async function placeOrder() {
 }
 
 async function loadDataFromSupabase() {
-  const { data: name, error: rpcError } = await db.rpc("get_restaurant_name", {
-    rest_id: restaurantId,
-  });
+  const { data: settings, error: rpcError } = await db.rpc(
+    "get_restaurant_settings",
+    { rest_id: restaurantId }
+  );
 
   if (rpcError) {
-    console.error("Error fetching restaurant name:", rpcError);
-  } else if (name) {
-    updateRestaurantName(name);
+    console.error("Error fetching restaurant settings:", rpcError);
+  } else if (settings) {
+    updateRestaurantName(settings.name);
+    universalParcelCharge = settings.universal_parcel_charge || 0;
   }
 
   db.channel("public:restaurants")
@@ -611,6 +664,9 @@ async function loadDataFromSupabase() {
       },
       (payload) => {
         updateRestaurantName(payload.new.name);
+        universalParcelCharge = payload.new.universal_parcel_charge || 0;
+        updateCartUI(); // Recalculate cart if default charge changes
+        displayParcelChargeNote();
       }
     )
     .subscribe();
@@ -632,6 +688,7 @@ async function loadDataFromSupabase() {
     availableCategories = categories;
   }
 
+  displayParcelChargeNote();
   renderMenu();
   updateCartUI();
 }
@@ -642,6 +699,22 @@ function updateRestaurantName(name) {
     document.querySelectorAll(".logo").forEach((logo) => {
       logo.textContent = `🍽️ ${name}`;
     });
+  }
+}
+
+function displayParcelChargeNote() {
+  const noteElement = document.getElementById("parcelChargeNote");
+  const hasIndividualCharges = menuItems.some((item) => item.parcel_charge > 0);
+
+  if (universalParcelCharge > 0 && !hasIndividualCharges) {
+    noteElement.textContent = `Note: A parcel charge of ₹${universalParcelCharge} applies to takeaway items.`;
+  } else if (universalParcelCharge > 0 && hasIndividualCharges) {
+    noteElement.textContent = `Note: A parcel charge of ₹${universalParcelCharge} applies to takeaway items. For some items this charge may differ. For more info on this please contact our staff.`;
+  } else if (universalParcelCharge === 0 && hasIndividualCharges) {
+    noteElement.textContent =
+      "Note: Parcel charges apply for some takeaway items.";
+  } else {
+    noteElement.textContent = "";
   }
 }
 
