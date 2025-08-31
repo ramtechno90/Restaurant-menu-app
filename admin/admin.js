@@ -26,6 +26,7 @@ const saveRestaurantNameBtn = document.getElementById("saveRestaurantNameBtn");
 const restaurantNameInput = document.getElementById("restaurantNameInput");
 const hamburgerBtn = document.getElementById("hamburgerBtn");
 const navLinks = document.getElementById("navLinks");
+const newItemNameInput = document.getElementById("newItemName");
 
 // Initialize App
 async function init() {
@@ -300,29 +301,34 @@ function getStatusColor(status) {
 }
 
 function getOrderActions(order) {
+  let actions = "";
   switch (order.status) {
     case "Pending":
-      return `
+      actions = `
                 <div class="order-actions">
                     <button onclick="updateOrderStatus(${order.id}, 'Accepted')" class="btn btn-success">Accept Order</button>
                     <button onclick="updateOrderStatus(${order.id}, 'Rejected')" class="btn btn-danger">Reject Order</button>
                 </div>
             `;
+      break;
     case "Accepted":
-      return `
+      actions = `
                 <div class="order-actions">
                     <button onclick="updateOrderStatus(${order.id}, 'Completed')" class="btn btn-success">Complete Order</button>
                 </div>
             `;
+      break;
     case "Rejected":
-      return `
-                <div class="order-actions">
-                    <button onclick="updateOrderStatus(${order.id}, 'Pending')" class="btn btn-secondary">Restore Order</button>
-                </div>
-            `;
+      actions = `
+              <div class="order-actions">
+                  <button onclick="updateOrderStatus(${order.id}, 'Pending')" class="btn btn-secondary">Restore</button>
+              </div>
+          `;
+      break;
     default:
-      return "";
+      actions = "";
   }
+  return actions;
 }
 
 window.updateOrderStatus = async function (orderId, newStatus) {
@@ -646,7 +652,10 @@ async function addOrUpdateItem() {
   if (error) {
     alert("Error saving item: " + error.message);
   } else {
-    alert(`Item ${id ? "updated" : "added"} successfully!`);
+    showInfoModal(
+      "Success! ✅",
+      `Item ${id ? "updated" : "added"} successfully!`
+    );
     resetItemForm();
     await loadDataFromSupabase();
     renderMenuItemsList();
@@ -680,15 +689,18 @@ async function addNewCategory() {
 }
 
 window.deleteMenuItem = async function (itemId) {
-  if (confirm("Are you sure you want to delete this item?")) {
-    const { error } = await db.from("menu_items").delete().eq("id", itemId);
-    if (error) {
-      alert("Error deleting item: " + error.message);
-    } else {
-      await loadDataFromSupabase();
-      renderMenuItemsList();
+  showConfirmationModal(
+    "Are you sure you want to delete this item?",
+    async () => {
+      const { error } = await db.from("menu_items").delete().eq("id", itemId);
+      if (error) {
+        alert("Error deleting item: " + error.message);
+      } else {
+        await loadDataFromSupabase();
+        renderMenuItemsList();
+      }
     }
-  }
+  );
 };
 
 window.editMenuItem = function (itemId) {
@@ -705,13 +717,11 @@ window.editMenuItem = function (itemId) {
     cancelEditBtn.classList.remove("hidden");
 
     // Collapse other sections and expand the add item section
-    setManagementSectionOpen("addItem", true);
-    setManagementSectionOpen("categoryManagement", false);
-    setManagementSectionOpen("restaurantSettings", false);
+    setManagementSectionExpanded("restaurantSettings", false);
+    setManagementSectionExpanded("categoryManagement", false);
+    setManagementSectionExpanded("addItem", true);
 
-    document
-      .getElementById("newItemName")
-      .scrollIntoView({ behavior: "smooth", block: "center" });
+    newItemNameInput.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 };
 
@@ -771,9 +781,35 @@ document
 document
   .getElementById("clearRejectedBtn")
   .addEventListener("click", clearRejected);
-saveRestaurantNameBtn.addEventListener("click", saveRestaurantName);
 
 let expandedSections = new Set();
+let expandedManagementSections = new Set(["addItem"]);
+
+window.toggleManagementSection = function (sectionId) {
+  setManagementSectionExpanded(
+    sectionId,
+    !expandedManagementSections.has(sectionId)
+  );
+};
+
+function setManagementSectionExpanded(sectionId, isExpanded) {
+  const content = document.getElementById(`${sectionId}Content`);
+  const arrow = document.getElementById(`${sectionId}Arrow`);
+
+  if (!content || !arrow) return;
+
+  if (isExpanded) {
+    content.classList.remove("category-collapsed");
+    content.classList.add("category-expanded");
+    arrow.style.transform = "rotate(0deg)";
+    expandedManagementSections.add(sectionId);
+  } else {
+    content.classList.add("category-collapsed");
+    content.classList.remove("category-expanded");
+    arrow.style.transform = "rotate(-90deg)";
+    expandedManagementSections.delete(sectionId);
+  }
+}
 
 window.toggleMenuSection = function (sectionId) {
   const content = document.getElementById(`content-${sectionId}`);
@@ -855,8 +891,8 @@ async function loadRestaurantDetails() {
   if (error) {
     console.error("Error fetching restaurant details:", error);
   } else if (data) {
-    updateRestaurantName(data.name);
     restaurantNameInput.value = data.name;
+    updateRestaurantName(data.name);
   }
 }
 
@@ -868,7 +904,7 @@ function updateRestaurantName(name) {
   }
 }
 
-async function saveRestaurantName() {
+saveRestaurantNameBtn.addEventListener("click", async () => {
   const newName = restaurantNameInput.value.trim();
   if (newName && adminRestaurantId) {
     const { error } = await db
@@ -882,7 +918,7 @@ async function saveRestaurantName() {
       alert("Restaurant name updated successfully!");
     }
   }
-}
+});
 
 // Real-time subscriptions
 db.channel("public:orders")
@@ -903,7 +939,7 @@ db.channel("public:menu_items")
     async (payload) => {
       console.log("Menu change received!", payload);
       await loadDataFromSupabase();
-      if (currentView === "menuManagement") {
+      if (menuManagementView.classList.contains("hidden") === false) {
         renderMenuItemsList();
       }
     }
@@ -941,33 +977,7 @@ function renderCategoryList() {
   });
 }
 
-function toggleManagementSection(sectionId) {
-  const content = document.getElementById(`${sectionId}Content`);
-  const arrow = document.getElementById(`${sectionId}Arrow`);
-  content.classList.toggle("category-collapsed");
-  content.classList.toggle("category-expanded");
-  if (content.classList.contains("category-expanded")) {
-    arrow.style.transform = "rotate(0deg)";
-  } else {
-    arrow.style.transform = "rotate(-90deg)";
-  }
-}
-
-function setManagementSectionOpen(sectionId, isOpen) {
-  const content = document.getElementById(`${sectionId}Content`);
-  const arrow = document.getElementById(`${sectionId}Arrow`);
-  if (isOpen) {
-    content.classList.add("category-expanded");
-    content.classList.remove("category-collapsed");
-    arrow.style.transform = "rotate(0deg)";
-  } else {
-    content.classList.remove("category-expanded");
-    content.classList.add("category-collapsed");
-    arrow.style.transform = "rotate(-90deg)";
-  }
-}
-
-async function renameCategory(categoryId, oldName) {
+window.renameCategory = async function (categoryId, oldName) {
   const newName = prompt(`Enter new name for category "${oldName}":`);
   if (newName && newName.trim() !== "") {
     const { error } = await db
@@ -977,7 +987,6 @@ async function renameCategory(categoryId, oldName) {
     if (error) {
       alert("Error renaming category: " + error.message);
     } else {
-      // Also update all menu items with the old category name
       const { error: updateError } = await db
         .from("menu_items")
         .update({ category: newName.trim() })
@@ -991,46 +1000,38 @@ async function renameCategory(categoryId, oldName) {
       }
     }
   }
-}
+};
 
-async function deleteCategory(categoryId, categoryName) {
+window.deleteCategory = async function (categoryId, categoryName) {
   const { data, error } = await db
     .from("menu_items")
     .select("id")
-    .eq("category", categoryName)
-    .eq("restaurant_id", adminRestaurantId);
+    .eq("category", categoryName);
 
   if (error) {
     alert("Error checking for items in category: " + error.message);
     return;
   }
 
-  let confirmationMessage = `Are you sure you want to delete the category "${categoryName}"?`;
+  let confirmMessage = `Are you sure you want to delete the category "${categoryName}"?`;
   if (data.length > 0) {
-    confirmationMessage += ` This will also delete all ${data.length} menu item(s) within it.`;
+    confirmMessage = `The category "${categoryName}" contains ${data.length} item(s). Are you sure you want to delete this category and all of its items?`;
   }
 
-  if (confirm(confirmationMessage)) {
-    // If there are items, delete them first
-    if (data.length > 0) {
-      const { error: deleteItemsError } = await db
-        .from("menu_items")
-        .delete()
-        .eq("category", categoryName)
-        .eq("restaurant_id", adminRestaurantId);
-
-      if (deleteItemsError) {
-        alert("Error deleting menu items: " + deleteItemsError.message);
-        return; // Stop if items can't be deleted
-      }
+  showConfirmationModal(confirmMessage, async () => {
+    const { error: deleteItemsError } = await db
+      .from("menu_items")
+      .delete()
+      .eq("category", categoryName);
+    if (deleteItemsError) {
+      alert("Error deleting items in category: " + deleteItemsError.message);
+      return;
     }
 
-    // Now, delete the category
     const { error: deleteCategoryError } = await db
       .from("categories")
       .delete()
       .eq("id", categoryId);
-
     if (deleteCategoryError) {
       alert("Error deleting category: " + deleteCategoryError.message);
     } else {
@@ -1038,7 +1039,29 @@ async function deleteCategory(categoryId, categoryName) {
       renderCategoryList();
       renderMenuItemsList();
     }
-  }
+  });
+};
+
+function showConfirmationModal(message, onConfirm) {
+  const confirmModal = document.getElementById("confirmModal");
+  const confirmMessage = document.getElementById("confirmMessage");
+  const confirmProceed = document.getElementById("confirmProceed");
+  const confirmCancel = document.getElementById("confirmCancel");
+
+  confirmMessage.textContent = message;
+  confirmModal.classList.remove("hidden");
+
+  const newConfirmBtn = confirmProceed.cloneNode(true);
+  confirmProceed.parentNode.replaceChild(newConfirmBtn, confirmProceed);
+
+  newConfirmBtn.addEventListener("click", () => {
+    onConfirm();
+    confirmModal.classList.add("hidden");
+  });
+
+  confirmCancel.onclick = () => {
+    confirmModal.classList.add("hidden");
+  };
 }
 
 init();

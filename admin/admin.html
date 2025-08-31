@@ -28,14 +28,14 @@
         <div class="modal-content">
             <h2>Admin Login 👨‍💼</h2>
             <p>Please sign in to manage the dashboard.</p>
-            <input type="email" id="adminEmail" placeholder="Email" class="form-input">
-            <input type="password" id="adminPassword" placeholder="Password" class="form-input">
-            <button id="adminLoginBtn" class="btn btn-primary" style="width: 100%;">Login</button>
-            <p style="font-size: 12px; text-align: center; margin-top: 16px;">
-                By logging in, you agree to our 
+            <p style="font-size: 12px; text-align: center; margin-top: -10px; margin-bottom: 20px;">
+                By continuing, you agree to our 
                 <a href="admin_terms.html" target="_blank" style="color: #ea580c;">Terms and Conditions</a> and 
                 <a href="admin_privacy.html" target="_blank" style="color: #ea580c;">Privacy Policy</a>.
             </p>
+            <input type="email" id="adminEmail" placeholder="Email" class="form-input">
+            <input type="password" id="adminPassword" placeholder="Password" class="form-input">
+            <button id="adminLoginBtn" class="btn btn-primary" style="width: 100%;">Login</button>
         </div>
     </div>
     
@@ -126,23 +126,22 @@
                 <h2>Menu & Category Management 📝</h2>
             </div>
 
-            <!-- Restaurant Settings Section -->
             <div class="management-section restaurant-settings">
                 <div class="category-header" onclick="toggleManagementSection('restaurantSettings')">
-                    <h3>Restaurant Settings</h3>
+                    <h3 style="margin-bottom: 16px;">Restaurant Settings</h3>
                     <span class="category-arrow" id="restaurantSettingsArrow" style="transform: rotate(-90deg);">▼</span>
                 </div>
                 <div id="restaurantSettingsContent" class="category-content category-collapsed">
-                    <div style="display: flex; gap: 12px; align-items: center; margin-top: 16px;">
-                        <input type="text" id="restaurantNameInput" placeholder="Your restaurant name" class="form-input" style="flex: 1; margin-bottom: 0;">
-                        <button id="saveRestaurantNameBtn" class="btn btn-primary">Save Name</button>
+                    <div style="display: flex; gap: 12px;">
+                        <input type="text" id="restaurantNameInput" placeholder="Restaurant name" class="form-input">
+                        <button id="saveRestaurantNameBtn" class="btn btn-success">Save Name</button>
                     </div>
                 </div>
             </div>
 
             <div class="management-section category-management">
-                <div class="category-header" onclick="toggleManagementSection('categoryManagement')">
-                    <h3>Category Management</h3>
+                 <div class="category-header" onclick="toggleManagementSection('categoryManagement')">
+                    <h3 style="margin-bottom: 16px;">Category Management</h3>
                     <span class="category-arrow" id="categoryManagementArrow" style="transform: rotate(-90deg);">▼</span>
                 </div>
                 <div id="categoryManagementContent" class="category-content category-collapsed">
@@ -160,31 +159,23 @@
             </div>
 
             <div class="management-section item-management">
-                <div class="category-header" onclick="toggleManagementSection('addItem')">
-                    <h3 id="formTitle">Add New Item</h3>
-                    <span class="category-arrow" id="addItemArrow" style="transform: rotate(-90deg);">▼</span>
+                 <div class="category-header" onclick="toggleManagementSection('addItem')">
+                    <h3 style="margin-bottom: 16px;" id="formTitle">Add New Item</h3>
+                    <span class="category-arrow" id="addItemArrow" style="transform: rotate(0deg);">▼</span>
                 </div>
-                <div id="addItemContent" class="category-content category-collapsed">
-                    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+                <div id="addItemContent" class="category-content category-expanded">
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
                         <input type="hidden" id="editItemId">
-                        <div>
-                            <label for="newItemName">Item Name <span style="color: red;">*</span></label>
-                            <input type="text" id="newItemName" placeholder="Item name" class="form-input">
-                        </div>
-                        <div>
-                            <label for="newItemPrice">Price <span style="color: red;">*</span></label>
-                            <input type="number" id="newItemPrice" placeholder="Price" step="0.01" class="form-input">
-                        </div>
-                        <div>
-                            <label for="newItemCategory">Category <span style="color: red;">*</span></label>
-                            <select id="newItemCategory" class="form-input">
-                                <option value="">Select category</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="newItemDescription">Description (optional)</label>
-                            <textarea id="newItemDescription" placeholder="Description" class="form-input" rows="3"></textarea>
-                        </div>
+                        <label>Item Name <span style="color:red">*</span></label>
+                        <input type="text" id="newItemName" placeholder="Item name" class="form-input">
+                         <label>Price <span style="color:red">*</span></label>
+                        <input type="number" id="newItemPrice" placeholder="Price" step="0.01" class="form-input">
+                        <label>Category <span style="color:red">*</span></label>
+                        <select id="newItemCategory" class="form-input">
+                            <option value="">Select category</option>
+                        </select>
+                        <label>Description (Optional)</label>
+                        <textarea id="newItemDescription" placeholder="Description" class="form-input" rows="3"></textarea>
                         <button id="addItemBtn" class="btn btn-success">Add Item</button>
                         <button id="cancelEditBtn" class="btn btn-secondary hidden">Cancel Edit</button>
                     </div>
@@ -198,13 +189,11 @@
                 </div>
             </div>
         </div>
+        <footer class="text-center" style="padding: 20px; margin-top: 40px; color: #6b7280;">
+            <a href="admin_terms.html" target="_blank" style="color: #ea580c; text-decoration: none; margin-right: 10px;">Terms and Conditions</a>
+            <a href="admin_privacy.html" target="_blank" style="color: #ea580c; text-decoration: none;">Privacy Policy</a>
+        </footer>
     </div>
-
-    <!-- Footer -->
-    <footer class="text-center" style="padding: 20px; margin-top: 40px; color: #6b7280;">
-        <a href="admin_terms.html" style="color: #ea580c; text-decoration: none; margin-right: 10px;">Terms and Conditions</a>
-        <a href="admin_privacy.html" style="color: #ea580c; text-decoration: none;">Privacy Policy</a>
-    </footer>
 
     <script src="admin.js"></script>
 </body>

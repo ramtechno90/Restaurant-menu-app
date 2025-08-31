@@ -51,24 +51,6 @@ async function init() {
   await loadDataFromSupabase();
   renderMenu();
   updateCartUI();
-
-  // Real-time subscription for restaurant name changes
-  db.channel(`public:restaurants:id=eq.${restaurantId}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "restaurants",
-        filter: `id=eq.${restaurantId}`,
-      },
-      (payload) => {
-        if (payload.new && payload.new.name) {
-          updateRestaurantName(payload.new.name);
-        }
-      }
-    )
-    .subscribe();
 }
 
 // Navigation
@@ -560,7 +542,6 @@ async function placeOrder() {
   placeOrderBtn.disabled = true;
   placeOrderBtn.textContent = "Placing Order...";
 
-  // Call the RPC function with the restaurantId to get a restaurant-specific order number
   const { data: nextNumber, error: rpcError } = await anonDb.rpc(
     "get_next_daily_order_number",
     { rest_id: restaurantId }
@@ -609,17 +590,30 @@ async function placeOrder() {
 }
 
 async function loadDataFromSupabase() {
-  // Use the secure RPC function to get the restaurant name
-  const { data: restaurantData, error: restaurantError } = await anonDb.rpc(
-    "get_restaurant_name",
-    { rest_id: restaurantId }
-  );
+  const { data: name, error: rpcError } = await db.rpc("get_restaurant_name", {
+    rest_id: restaurantId,
+  });
 
-  if (restaurantError) {
-    console.error("Error fetching restaurant name:", restaurantError);
-  } else if (restaurantData && restaurantData.length > 0) {
-    updateRestaurantName(restaurantData[0].name);
+  if (rpcError) {
+    console.error("Error fetching restaurant name:", rpcError);
+  } else if (name) {
+    updateRestaurantName(name);
   }
+
+  db.channel("public:restaurants")
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "restaurants",
+        filter: `id=eq.${restaurantId}`,
+      },
+      (payload) => {
+        updateRestaurantName(payload.new.name);
+      }
+    )
+    .subscribe();
 
   const { data: items, error: itemsError } = await db
     .from("menu_items")
