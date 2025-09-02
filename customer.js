@@ -650,7 +650,11 @@ async function loadDataFromSupabase() {
   if (settingsError) {
     console.error("Error fetching restaurant settings:", settingsError);
   } else if (settings) {
-    updateRestaurantName(settings.name);
+    updateRestaurantName(
+      settings.name,
+      settings.logo_url,
+      settings.display_preference
+    );
     universalParcelCharge = settings.universal_parcel_charge || 0;
   }
 
@@ -664,7 +668,11 @@ async function loadDataFromSupabase() {
         filter: `id=eq.${restaurantId}`,
       },
       (payload) => {
-        updateRestaurantName(payload.new.name);
+        updateRestaurantName(
+          payload.new.name,
+          payload.new.logo_url,
+          payload.new.display_preference
+        );
         universalParcelCharge = payload.new.universal_parcel_charge || 0;
         updateCartUI(); // Recalculate cart if default charge changes
         displayParcelChargeNote();
@@ -695,12 +703,35 @@ async function loadDataFromSupabase() {
 }
 
 // Appearance Settings
-function updateRestaurantName(name) {
-  if (name) {
-    document.querySelectorAll(".logo").forEach((logo) => {
-      logo.textContent = `🍽️ ${name}`;
-    });
-  }
+function updateRestaurantName(name, logoUrl, displayPreference) {
+  document.querySelectorAll(".logo").forEach((logo) => {
+    let html = "";
+    const isNav = logo.closest(".nav-content");
+    const wantsLogo = displayPreference !== "name_only" && logoUrl;
+    const wantsName = displayPreference !== "logo_only";
+
+    if (wantsLogo) {
+      const logoClass = isNav ? "logo-img-nav" : "logo-img-main";
+      html += `<img src="${logoUrl}" alt="${
+        name || "Logo"
+      }" class="${logoClass}">`;
+    }
+
+    if (wantsName) {
+      if (!wantsLogo) {
+        // If there's no logo to show, use emoji
+        html += "🍽️";
+      }
+      html += ` ${name || "Restaurant"}`;
+    }
+
+    // Handle case where there's nothing to show
+    if (html.trim() === "") {
+      html = `🍽️ ${name || "Restaurant"}`;
+    }
+
+    logo.innerHTML = html;
+  });
 }
 
 function displayParcelChargeNote() {
