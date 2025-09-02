@@ -252,7 +252,8 @@ window.addToCart = function (itemId) {
 };
 
 window.removeFromCart = function (cartId) {
-  cart = cart.filter((item) => item.cartId !== cartId);
+  const numericCartId = parseFloat(cartId);
+  cart = cart.filter((item) => item.cartId !== numericCartId);
   updateCartUI();
   renderCart();
 };
