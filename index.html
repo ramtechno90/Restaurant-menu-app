@@ -6,6 +6,7 @@
     <title>Restaurant Menu App</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -21,8 +22,19 @@
         </div>
     </nav>
 
+    <!-- Delivery Method Modal -->
+    <div id="deliveryMethodModal" class="modal">
+        <div class="modal-content">
+            <h2>How would you like to order?</h2>
+            <div style="display: flex; justify-content: space-around; margin-top: 20px; gap: 10px;">
+                <button id="deliveryBtn" class="btn btn-primary" style="width: 100%;">Delivery</button>
+                <button id="dineInBtn" class="btn btn-primary" style="width: 100%;">Dine-in</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Customer Name Modal -->
-    <div id="nameModal" class="modal">
+    <div id="nameModal" class="modal hidden">
         <div class="modal-content">
             <h2>Welcome! 👋</h2>
             <p>Please enter your name to start ordering:</p>
@@ -74,6 +86,25 @@
                     <button id="proceedToCheckout" class="btn btn-success" style="width: 100%;" disabled>
                         Proceed to Checkout
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location Section -->
+        <div id="locationSection" class="container hidden">
+            <div class="cart-container">
+                <div class="cart-header">
+                    <h2>Delivery Address</h2>
+                    <a href="#" id="backToCart" class="back-link">← Back to Cart</a>
+                </div>
+                <div class="location-content" style="padding: 16px;">
+                    <p>Please provide your delivery address.</p>
+                    <div class="address-input-group" style="display: flex; gap: 10px; margin-top: 10px;">
+                        <input type="text" id="addressInput" placeholder="Enter your address" class="form-input" style="width: 100%;">
+                    </div>
+                    <div id="map" style="height: 300px; margin-top: 20px; border-radius: 8px;"></div>
+                    <button id="useCurrentLocationBtn" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">Use My Current Location</button>
+                    <button id="confirmAddressBtn" class="btn btn-success" style="width: 100%; margin-top: 20px;" disabled>Confirm Address</button>
                 </div>
             </div>
         </div>

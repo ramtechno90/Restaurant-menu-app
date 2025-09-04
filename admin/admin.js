@@ -259,9 +259,9 @@ function renderOrderSection(status, ordersList) {
                         `<span class="order-icon">🍽️</span> ${item.dineInQty}`
                       );
                     if (item.takeawayQty > 0)
-                      diningDetails.push(
-                        `<span class="order-icon">📦</span> ${item.takeawayQty}`
-                      );
+                        diningDetails.push(
+                            `<span class="order-icon">${order.delivery_method === 'delivery' ? '🚚' : '📦'}</span> ${item.takeawayQty}`
+                        );
 
                     return `
                     <div class="order-item">
@@ -288,6 +288,16 @@ function renderOrderSection(status, ordersList) {
                   })
                   .join("")}
             </div>
+            ${
+                order.delivery_method === 'delivery' && order.delivery_address
+                    ? `
+                    <div class="order-delivery-address" style="padding: 12px; background-color: #f3f4f6; border-top: 1px solid #e5e7eb;">
+                        <p style="font-weight: bold; margin: 0 0 5px 0;">Delivery Address:</p>
+                        <p style="margin: 0;">${order.delivery_address}</p>
+                    </div>
+                `
+                    : ''
+            }
             ${getOrderActions(order)}
         </div>
     `

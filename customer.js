@@ -20,15 +20,28 @@ let menuItems = [];
 let availableCategories = [];
 let restaurantId = null;
 let universalParcelCharge = 0;
+let deliveryMethod = null; // 'delivery' or 'dine-in'
+let deliveryAddress = null;
+let map;
+let marker;
+let autocomplete;
 
 // DOM Elements
 const customerView = document.getElementById("customerView");
+const deliveryMethodModal = document.getElementById("deliveryMethodModal");
+const deliveryBtn = document.getElementById("deliveryBtn");
+const dineInBtn = document.getElementById("dineInBtn");
 const nameModal = document.getElementById("nameModal");
 const customerName = document.getElementById("customerName");
 const startOrdering = document.getElementById("startOrdering");
 const menuSection = document.getElementById("menuSection");
 const cartSection = document.getElementById("cartSection");
 const invoiceSection = document.getElementById("invoiceSection");
+const locationSection = document.getElementById("locationSection");
+const backToCart = document.getElementById("backToCart");
+const addressInput = document.getElementById("addressInput");
+const useCurrentLocationBtn = document.getElementById("useCurrentLocationBtn");
+const confirmAddressBtn = document.getElementById("confirmAddressBtn");
 const cartIcon = document.getElementById("cartIcon");
 const cartCount = document.getElementById("cartCount");
 const viewCartBtn = document.getElementById("viewCartBtn");
@@ -70,16 +83,31 @@ window.showCartSection = function () {
   renderCart();
 };
 
+function showLocationSection() {
+    menuSection.classList.add("hidden");
+    cartSection.classList.add("hidden");
+    invoiceSection.classList.add("hidden");
+    locationSection.classList.remove("hidden");
+    viewCartBtn.classList.add("hidden");
+    initMap();
+}
+
 function showInvoiceSection() {
-  menuSection.classList.add("hidden");
-  cartSection.classList.add("hidden");
-  invoiceSection.classList.remove("hidden");
-  viewCartBtn.classList.add("hidden");
-  renderInvoicePreview();
+  if (deliveryMethod === 'delivery' && !deliveryAddress) {
+    showLocationSection();
+  } else {
+    menuSection.classList.add("hidden");
+    cartSection.classList.add("hidden");
+    locationSection.classList.add("hidden");
+    invoiceSection.classList.remove("hidden");
+    viewCartBtn.classList.add("hidden");
+    renderInvoicePreview();
+  }
 }
 
 viewCartBtn.addEventListener("click", showCartSection);
 backToMenu.addEventListener("click", showMenuSection);
+backToCart.addEventListener("click", showCartSection);
 proceedToCheckout.addEventListener("click", showInvoiceSection);
 newOrderBtn.addEventListener("click", () => {
   cart = [];
@@ -92,6 +120,19 @@ cancelOrderBtn.addEventListener("click", () => {
   cart = [];
   updateCartUI();
   showMenuSection();
+});
+
+// Delivery Method Setup
+deliveryBtn.addEventListener("click", () => {
+    deliveryMethod = "delivery";
+    deliveryMethodModal.classList.add("hidden");
+    nameModal.classList.remove("hidden");
+});
+
+dineInBtn.addEventListener("click", () => {
+    deliveryMethod = "dine-in";
+    deliveryMethodModal.classList.add("hidden");
+    nameModal.classList.remove("hidden");
 });
 
 // Customer Name Setup
@@ -116,6 +157,101 @@ customerName.addEventListener("keypress", (e) => {
 // Helper function to create safe IDs from category names
 function sanitizeForId(text) {
   return text.replace(/[^a-zA-Z0-9]/g, "-");
+}
+
+// Map Functions
+function initMap() {
+    map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 20.5937, lng: 78.9629 }, // Default to India
+        zoom: 5,
+    });
+
+    marker = new google.maps.Marker({
+        map: map,
+        anchorPoint: new google.maps.Point(0, -29),
+    });
+
+    autocomplete = new google.maps.places.Autocomplete(addressInput);
+    autocomplete.setFields(["address_components", "geometry", "icon", "name"]);
+    autocomplete.addListener("place_changed", onPlaceChanged);
+
+    useCurrentLocationBtn.addEventListener("click", () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const pos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                    };
+                    map.setCenter(pos);
+                    map.setZoom(17);
+                    marker.setPosition(pos);
+                    geocodePosition(pos);
+                },
+                () => {
+                    alert("Error: The Geolocation service failed.");
+                }
+            );
+        } else {
+            alert("Error: Your browser doesn't support geolocation.");
+        }
+    });
+
+    confirmAddressBtn.addEventListener("click", () => {
+        if (deliveryAddress) {
+            showInvoiceSection();
+        } else {
+            alert("Please select a valid address.");
+        }
+    });
+}
+
+function onPlaceChanged() {
+    const place = autocomplete.getPlace();
+    if (!place.geometry) {
+        window.alert("No details available for input: '" + place.name + "'");
+        return;
+    }
+
+    if (place.geometry.viewport) {
+        map.fitBounds(place.geometry.viewport);
+    } else {
+        map.setCenter(place.geometry.location);
+        map.setZoom(17);
+    }
+
+    marker.setPosition(place.geometry.location);
+    marker.setVisible(true);
+
+    let address = '';
+    if (place.address_components) {
+        address = [
+            (place.address_components[0] && place.address_components[0].short_name) || '',
+            (place.address_components[1] && place.address_components[1].short_name) || '',
+            (place.address_components[2] && place.address_components[2].short_name) || ''
+        ].join(' ');
+    }
+
+    if (place.name && !address.includes(place.name)) {
+        address = place.name + ", " + address;
+    }
+
+    deliveryAddress = address;
+    addressInput.value = address;
+    confirmAddressBtn.disabled = false;
+}
+
+function geocodePosition(pos) {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ latLng: pos }, (responses) => {
+        if (responses && responses.length > 0) {
+            deliveryAddress = responses[0].formatted_address;
+            addressInput.value = deliveryAddress;
+            confirmAddressBtn.disabled = false;
+        } else {
+            window.alert("Geocoder failed due to: " + status);
+        }
+    });
 }
 
 // Menu Rendering
@@ -227,12 +363,16 @@ window.addToCart = function (itemId) {
   const existingCartItem = cart.find((cartItem) => cartItem.id === itemId);
 
   if (existingCartItem) {
-    existingCartItem.dineInQty += 1;
+    if (deliveryMethod === 'delivery') {
+      existingCartItem.takeawayQty += 1;
+    } else {
+      existingCartItem.dineInQty += 1;
+    }
   } else {
     const cartItem = {
       ...item,
-      dineInQty: 1,
-      takeawayQty: 0,
+      dineInQty: deliveryMethod === 'delivery' ? 0 : 1,
+      takeawayQty: deliveryMethod === 'delivery' ? 1 : 0,
       cartId: Date.now() + Math.random(),
       note: "",
     };
@@ -378,50 +518,30 @@ function renderCart() {
             
             <div class="cart-item-options">
                 <div class="dining-option">
-                    <div class="option-header" onclick="toggleOption('dining-${
-                      item.cartId
-                    }')">
-                        <span><span class="order-icon">🍽️</span> Dining Options & Quantities</span>
-                        <span class="option-arrow" id="arrow-dining-${
-                          item.cartId
-                        }">▼</span>
+                    <div class="option-header" onclick="toggleOption('dining-${item.cartId}')">
+                        <span><span class="order-icon">🍽️</span> ${deliveryMethod === 'delivery' ? 'Quantity' : 'Dining Options & Quantities'}</span>
+                        <span class="option-arrow" id="arrow-dining-${item.cartId}">▼</span>
                     </div>
-                    <div class="option-content expanded" id="content-dining-${
-                      item.cartId
-                    }">
+                    <div class="option-content expanded" id="content-dining-${item.cartId}">
                         <div style="display: flex; flex-direction: column; gap: 12px;">
+                            ${deliveryMethod !== 'delivery' ? `
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px;">
                                 <span style="display: flex; align-items: center; gap: 8px; font-weight: 500;">
                                     <span class="order-icon">🍽️</span> Dine-in
                                 </span>
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <button onclick="updateDiningQuantity('${
-                                      item.cartId
-                                    }', 'dine-in', -1)" 
-                                            class="quantity-btn" ${
-                                              item.dineInQty === 0
-                                                ? 'style="opacity: 0.5;"'
-                                                : ""
-                                            }>-</button>
-                                    <span class="quantity" style="min-width: 32px;">${
-                                      item.dineInQty
-                                    }</span>
-                                    <button onclick="updateDiningQuantity('${
-                                      item.cartId
-                                    }', 'dine-in', 1)" 
+                                    <button onclick="updateDiningQuantity('${item.cartId}', 'dine-in', -1)"
+                                            class="quantity-btn" ${item.dineInQty === 0 ? 'style="opacity: 0.5;"' : ""}>-</button>
+                                    <span class="quantity" style="min-width: 32px;">${item.dineInQty}</span>
+                                    <button onclick="updateDiningQuantity('${item.cartId}', 'dine-in', 1)"
                                             class="quantity-btn">+</button>
                                 </div>
                             </div>
+                            ` : ''}
                             
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px; ${
-                              !item.takeaway_available
-                                ? "opacity: 0.5; background: #f9fafb;"
-                                : ""
-                            }">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px; ${!item.takeaway_available ? "opacity: 0.5; background: #f9fafb;" : ""}">
                                 <span style="display: flex; align-items: center; gap: 8px; font-weight: 500;">
-                                    <span class="order-icon">📦</span> Takeaway ${parcelChargeInfo} ${
-        !item.takeaway_available ? "(Not Available)" : ""
-      }
+                                    <span class="order-icon">📦</span> ${deliveryMethod === 'delivery' ? 'Delivery' : 'Takeaway'} ${parcelChargeInfo} ${!item.takeaway_available ? "(Not Available)" : ""}
                                 </span>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <button onclick="updateDiningQuantity('${
@@ -525,7 +645,7 @@ function renderInvoicePreview() {
                   );
                 if (item.takeawayQty > 0)
                   diningDetails.push(
-                    `<span class="order-icon">📦</span> Takeaway: ${item.takeawayQty}`
+                    `<span class="order-icon">📦</span> ${deliveryMethod === 'delivery' ? 'Delivery' : 'Takeaway'}: ${item.takeawayQty}`
                   );
 
                 return `
@@ -607,16 +727,23 @@ async function placeOrder() {
     return;
   }
 
-  const { data: orderData, error: insertError } = await anonDb
-    .from("orders")
-    .insert({
+  const orderPayload = {
       customer_name: currentUser,
       total: grandTotal,
       items: cart,
       status: "Pending",
       daily_order_number: nextNumber,
       restaurant_id: restaurantId,
-    });
+      delivery_method: deliveryMethod,
+  };
+
+  if (deliveryMethod === 'delivery') {
+      orderPayload.delivery_address = deliveryAddress;
+  }
+
+  const { data: orderData, error: insertError } = await anonDb
+    .from("orders")
+    .insert(orderPayload);
 
   if (insertError) {
     console.error("Insert error:", insertError);
