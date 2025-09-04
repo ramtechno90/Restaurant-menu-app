@@ -39,7 +39,6 @@ const cartSection = document.getElementById("cartSection");
 const invoiceSection = document.getElementById("invoiceSection");
 const locationSection = document.getElementById("locationSection");
 const backToCart = document.getElementById("backToCart");
-const addressInput = document.getElementById("addressInput");
 const useCurrentLocationBtn = document.getElementById("useCurrentLocationBtn");
 const confirmAddressBtn = document.getElementById("confirmAddressBtn");
 const cartIcon = document.getElementById("cartIcon");
@@ -164,16 +163,23 @@ function initMap() {
     map = new google.maps.Map(document.getElementById("map"), {
         center: { lat: 20.5937, lng: 78.9629 }, // Default to India
         zoom: 5,
+        mapId: "DEMO_MAP_ID", // Required for Advanced Markers
     });
 
-    marker = new google.maps.Marker({
+    marker = new google.maps.marker.AdvancedMarkerElement({
         map: map,
-        anchorPoint: new google.maps.Point(0, -29),
     });
 
-    autocomplete = new google.maps.places.Autocomplete(addressInput);
-    autocomplete.setFields(["address_components", "geometry", "icon", "name"]);
-    autocomplete.addListener("place_changed", onPlaceChanged);
+    const placeAutocomplete = new google.maps.places.PlaceAutocompleteElement();
+    placeAutocomplete.id = "addressInput";
+    const addressInputGroup = document.getElementById("address-input-group");
+    addressInputGroup.innerHTML = '';
+    addressInputGroup.appendChild(placeAutocomplete);
+
+    placeAutocomplete.addEventListener("gmp-select", async (event) => {
+        const place = await event.place.fetchFields({ fields: ["address_components", "geometry", "name", "formatted_address"] });
+        onPlaceSelect(place);
+    });
 
     useCurrentLocationBtn.addEventListener("click", () => {
         if (navigator.geolocation) {
@@ -185,7 +191,7 @@ function initMap() {
                     };
                     map.setCenter(pos);
                     map.setZoom(17);
-                    marker.setPosition(pos);
+                    marker.position = pos;
                     geocodePosition(pos);
                 },
                 () => {
@@ -206,8 +212,7 @@ function initMap() {
     });
 }
 
-function onPlaceChanged() {
-    const place = autocomplete.getPlace();
+function onPlaceSelect(place) {
     if (!place.geometry) {
         window.alert("No details available for input: '" + place.name + "'");
         return;
@@ -220,24 +225,10 @@ function onPlaceChanged() {
         map.setZoom(17);
     }
 
-    marker.setPosition(place.geometry.location);
-    marker.setVisible(true);
+    marker.position = place.geometry.location;
 
-    let address = '';
-    if (place.address_components) {
-        address = [
-            (place.address_components[0] && place.address_components[0].short_name) || '',
-            (place.address_components[1] && place.address_components[1].short_name) || '',
-            (place.address_components[2] && place.address_components[2].short_name) || ''
-        ].join(' ');
-    }
-
-    if (place.name && !address.includes(place.name)) {
-        address = place.name + ", " + address;
-    }
-
-    deliveryAddress = address;
-    addressInput.value = address;
+    deliveryAddress = place.formatted_address;
+    document.getElementById("addressInput").value = place.formatted_address;
     confirmAddressBtn.disabled = false;
 }
 
@@ -246,7 +237,7 @@ function geocodePosition(pos) {
     geocoder.geocode({ latLng: pos }, (responses) => {
         if (responses && responses.length > 0) {
             deliveryAddress = responses[0].formatted_address;
-            addressInput.value = deliveryAddress;
+            document.getElementById("addressInput").value = deliveryAddress;
             confirmAddressBtn.disabled = false;
         } else {
             window.alert("Geocoder failed due to: " + status);

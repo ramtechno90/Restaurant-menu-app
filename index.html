@@ -6,7 +6,7 @@
     <title>Restaurant Menu App</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places,marker" async></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -99,7 +99,7 @@
                 </div>
                 <div class="location-content" style="padding: 16px;">
                     <p>Please provide your delivery address.</p>
-                    <div class="address-input-group" style="display: flex; gap: 10px; margin-top: 10px;">
+                    <div id="address-input-group" class="address-input-group" style="display: flex; gap: 10px; margin-top: 10px;">
                         <input type="text" id="addressInput" placeholder="Enter your address" class="form-input" style="width: 100%;">
                     </div>
                     <div id="map" style="height: 300px; margin-top: 20px; border-radius: 8px;"></div>
