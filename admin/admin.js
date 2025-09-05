@@ -293,7 +293,9 @@ function renderOrderSection(status, ordersList) {
                     ? `
                     <div class="order-delivery-address" style="padding: 12px; background-color: #f3f4f6; border-top: 1px solid #e5e7eb;">
                         <p style="font-weight: bold; margin: 0 0 5px 0;">Delivery Address:</p>
-                        <p style="margin: 0;">${order.delivery_address}</p>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.delivery_address)}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: #1d4ed8;">
+                            <p style="margin: 0;">${order.delivery_address}</p>
+                        </a>
                     </div>
                 `
                     : ''
