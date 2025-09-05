@@ -196,7 +196,8 @@ function initMap() {
                 },
                 () => {
                     alert("Error: The Geolocation service failed.");
-                }
+                },
+                { enableHighAccuracy: true }
             );
         } else {
             alert("Error: Your browser doesn't support geolocation.");
