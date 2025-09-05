@@ -626,11 +626,12 @@ function renderInvoicePreview() {
             ${
                 deliveryMethod === 'delivery' && deliveryAddress
                     ? `
-                    <div class="invoice-row" style="margin-top: 10px;">
+                    <div class="invoice-row" style="margin-top: 10px; display: flex; justify-content: space-between; align-items: flex-start;">
                         <div>
                             <p style="font-weight: bold; font-size: 16px;">Delivery To:</p>
                             <p style="color: #6b7280;">${deliveryAddress}</p>
                         </div>
+                        <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="showLocationSection()">Change</button>
                     </div>
                     `
                     : ''
