@@ -125,7 +125,7 @@ cancelOrderBtn.addEventListener("click", () => {
 deliveryBtn.addEventListener("click", () => {
     deliveryMethod = "delivery";
     deliveryMethodModal.classList.add("hidden");
-    showLocationSection();
+    nameModal.classList.remove("hidden");
 });
 
 dineInBtn.addEventListener("click", () => {
@@ -205,8 +205,7 @@ function initMap() {
 
     confirmAddressBtn.addEventListener("click", () => {
         if (deliveryAddress) {
-            locationSection.classList.add("hidden");
-            nameModal.classList.remove("hidden");
+            showInvoiceSection();
         } else {
             alert("Please select a valid address.");
         }
