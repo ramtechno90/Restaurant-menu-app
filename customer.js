@@ -125,7 +125,7 @@ cancelOrderBtn.addEventListener("click", () => {
 deliveryBtn.addEventListener("click", () => {
     deliveryMethod = "delivery";
     deliveryMethodModal.classList.add("hidden");
-    nameModal.classList.remove("hidden");
+    showLocationSection();
 });
 
 dineInBtn.addEventListener("click", () => {
@@ -205,7 +205,8 @@ function initMap() {
 
     confirmAddressBtn.addEventListener("click", () => {
         if (deliveryAddress) {
-            showInvoiceSection();
+            locationSection.classList.add("hidden");
+            nameModal.classList.remove("hidden");
         } else {
             alert("Please select a valid address.");
         }
@@ -623,6 +624,18 @@ function renderInvoicePreview() {
                     <p style="font-weight: bold; font-size: 18px;">Customer: ${currentUser}</p>
                 </div>
             </div>
+            ${
+                deliveryMethod === 'delivery' && deliveryAddress
+                    ? `
+                    <div class="invoice-row" style="margin-top: 10px;">
+                        <div>
+                            <p style="font-weight: bold; font-size: 16px;">Delivery To:</p>
+                            <p style="color: #6b7280;">${deliveryAddress}</p>
+                        </div>
+                    </div>
+                    `
+                    : ''
+            }
         </div>
         
         <div class="invoice-items">
