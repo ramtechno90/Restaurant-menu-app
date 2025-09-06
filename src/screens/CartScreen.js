@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, FlatList, Button, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, FlatList, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useCart } from '../context/CartContext';
+import { COLORS, SIZES, FONTS } from '../theme';
 
 const CartScreen = ({ navigation }) => {
   const { cart, removeFromCart, updateQuantity } = useCart();
@@ -9,27 +10,43 @@ const CartScreen = ({ navigation }) => {
 
   const renderCartItem = ({ item }) => (
     <View style={styles.cartItem}>
-      <Text style={styles.itemName}>{item.name}</Text>
-      <Text>Quantity: {item.quantity}</Text>
-      <Text>Price: ₹{item.price * item.quantity}</Text>
-      <View style={styles.buttonContainer}>
-        <Button title="+" onPress={() => updateQuantity(item.id, item.quantity + 1)} />
-        <Button title="-" onPress={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : removeFromCart(item.id)} />
-        <Button title="Remove" onPress={() => removeFromCart(item.id)} />
+      <View style={{flex: 1}}>
+        <Text style={styles.itemName}>{item.name}</Text>
+        <Text style={styles.itemPrice}>₹{item.price}</Text>
+      </View>
+      <View style={styles.quantityContainer}>
+        <TouchableOpacity style={styles.quantityButton} onPress={() => item.quantity > 1 ? updateQuantity(item.id, item.quantity - 1) : removeFromCart(item.id)}>
+          <Text style={styles.quantityButtonText}>-</Text>
+        </TouchableOpacity>
+        <Text style={styles.quantityText}>{item.quantity}</Text>
+        <TouchableOpacity style={styles.quantityButton} onPress={() => updateQuantity(item.id, item.quantity + 1)}>
+          <Text style={styles.quantityButtonText}>+</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Your Cart</Text>
+      </View>
       <FlatList
         data={cart}
         renderItem={renderCartItem}
         keyExtractor={(item) => item.id.toString()}
-        ListEmptyComponent={<Text>Your cart is empty</Text>}
+        ListEmptyComponent={<Text style={styles.emptyCartText}>Your cart is empty</Text>}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-      <Text style={styles.total}>Total: ₹{total.toFixed(2)}</Text>
-      <Button title="Proceed to Checkout" onPress={() => navigation.navigate('Location')} />
+      <View style={styles.footer}>
+        <View style={styles.totalContainer}>
+          <Text style={styles.totalText}>Total:</Text>
+          <Text style={styles.totalAmount}>₹{total.toFixed(2)}</Text>
+        </View>
+        <TouchableOpacity style={styles.checkoutButton} onPress={() => navigation.navigate('Location')}>
+          <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -37,27 +54,91 @@ const CartScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
+    backgroundColor: COLORS.lightGray,
+  },
+  header: {
+    padding: SIZES.padding,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  headerTitle: {
+    ...FONTS.h2,
+    color: COLORS.secondary,
   },
   cartItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: SIZES.padding,
+    backgroundColor: COLORS.white,
   },
   itemName: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    ...FONTS.h3,
+    color: COLORS.secondary,
   },
-  buttonContainer: {
+  itemPrice: {
+    ...FONTS.body4,
+    color: COLORS.darkGray,
+  },
+  quantityContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: SIZES.radius,
   },
-  total: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  quantityButton: {
+    padding: SIZES.base,
+  },
+  quantityButtonText: {
+    ...FONTS.h2,
+    color: COLORS.primary,
+  },
+  quantityText: {
+    ...FONTS.h3,
+    paddingHorizontal: SIZES.padding,
+    color: COLORS.secondary,
+  },
+  emptyCartText: {
+    ...FONTS.body3,
     textAlign: 'center',
-    marginVertical: 20,
+    marginTop: SIZES.padding * 2,
+    color: COLORS.darkGray,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: COLORS.lightGray,
+  },
+  footer: {
+    padding: SIZES.padding,
+    backgroundColor: COLORS.white,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
+  },
+  totalContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: SIZES.padding,
+  },
+  totalText: {
+    ...FONTS.h3,
+    color: COLORS.secondary,
+  },
+  totalAmount: {
+    ...FONTS.h2,
+    color: COLORS.secondary,
+  },
+  checkoutButton: {
+    backgroundColor: COLORS.primary,
+    padding: SIZES.padding,
+    borderRadius: SIZES.radius,
+    alignItems: 'center',
+  },
+  checkoutButtonText: {
+    ...FONTS.h3,
+    color: COLORS.white,
   },
 });
 
