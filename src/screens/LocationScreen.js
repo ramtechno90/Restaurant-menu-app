@@ -6,6 +6,7 @@ import { COLORS, SIZES, FONTS } from '../theme';
 
 const LocationScreen = ({ navigation }) => {
   const [location, setLocation] = useState(null);
+  const [address, setAddress] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
@@ -18,6 +19,17 @@ const LocationScreen = ({ navigation }) => {
 
       let currentLocation = await Location.getCurrentPositionAsync({});
       setLocation(currentLocation.coords);
+
+      let geocodedAddress = await Location.reverseGeocodeAsync({
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+      });
+
+      if (geocodedAddress.length > 0) {
+        let addr = geocodedAddress[0];
+        let formattedAddress = `${addr.name}, ${addr.street}, ${addr.city}, ${addr.postalCode}`;
+        setAddress(formattedAddress);
+      }
     })();
   }, []);
 
@@ -52,6 +64,12 @@ const LocationScreen = ({ navigation }) => {
         </MapView>
       )}
       <View style={styles.footer}>
+        {address && (
+          <View style={styles.addressContainer}>
+            <Text style={styles.addressLabel}>Selected Address:</Text>
+            <Text style={styles.addressText}>{address}</Text>
+          </View>
+        )}
         <TouchableOpacity style={styles.confirmButton} onPress={handleConfirmAddress}>
           <Text style={styles.confirmButtonText}>Confirm Address</Text>
         </TouchableOpacity>
@@ -82,6 +100,21 @@ const styles = StyleSheet.create({
   footer: {
     padding: SIZES.padding,
     backgroundColor: COLORS.white,
+  },
+  addressContainer: {
+    marginBottom: SIZES.padding,
+    padding: SIZES.padding,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: SIZES.radius,
+  },
+  addressLabel: {
+    ...FONTS.h4,
+    color: COLORS.secondary,
+    marginBottom: SIZES.base,
+  },
+  addressText: {
+    ...FONTS.body3,
+    color: COLORS.darkGray,
   },
   confirmButton: {
     backgroundColor: COLORS.primary,
